@@ -1,6 +1,6 @@
 import ItemMapper from '../item/item.mapper';
 import type RegistryData from './registry.data';
-import LangFileMapper from '../lang-file/lang-file.mapper';
+import LangMapper from '../lang/lang.mapper';
 import ItemTagMapper from '../item-tag/item-tag.mapper';
 import ItemTextureMapper from '../item-texture/item-texture.mapper';
 import RegistryModel from './registry.model';
@@ -8,22 +8,14 @@ import RegistryModel from './registry.model';
 export default class RegistryMapper {
   static toData(registry: RegistryModel): RegistryData {
     const data: RegistryData = {};
-
-    if (registry.id !== undefined) {
-      data.id = registry.id;
-    }
-
-    if (registry.namespace !== undefined) {
-      data.namespace = registry.namespace;
-    }
-
-    if (registry.name !== undefined) {
-      data.name = registry.name;
-    }
-
-    if (registry.version !== undefined) {
-      data.version = registry.version;
-    }
+    data.id = registry.id;
+    data.namespace = registry.namespace;
+    data.name = registry.name;
+    data.version = registry.version;
+    data.mcVersion = registry.mcVersion;
+    data.modId = registry.modId;
+    data.createdAt = registry.createdAt?.toISOString();
+    data.updatedAt = registry.updatedAt?.toISOString();
 
     if (registry.items !== undefined) {
       data.items = registry.items.map((item) => {
@@ -43,9 +35,9 @@ export default class RegistryMapper {
       });
     }
 
-    if (registry.langsFiles !== undefined) {
-      data.langFiles = registry.langsFiles.map((lang) => {
-        return LangFileMapper.toData(lang);
+    if (registry.langs !== undefined) {
+      data.langs = registry.langs.map((lang) => {
+        return LangMapper.toData(lang);
       });
     }
 
@@ -57,6 +49,14 @@ export default class RegistryMapper {
     model.version = data.version;
     model.name = data.name;
     model.namespace = data.namespace;
+    model.mcVersion = data.mcVersion;
+    model.modId = data.modId;
+    if (data.createdAt) {
+      model.createdAt = new Date(data.createdAt);
+    }
+    if (data.updatedAt) {
+      model.updatedAt = new Date(data.updatedAt);
+    }
     model.items = data.items?.map((itemData) => {
       return ItemMapper.toModel(itemData);
     });
@@ -66,8 +66,8 @@ export default class RegistryMapper {
     model.itemTags = data.itemTags?.map((tagData) => {
       return ItemTagMapper.toModel(tagData);
     });
-    model.langsFiles = data.langFiles?.map((langData) => {
-      return LangFileMapper.toModel(langData);
+    model.langs = data.langs?.map((langData) => {
+      return LangMapper.toModel(langData);
     });
     return model;
   }

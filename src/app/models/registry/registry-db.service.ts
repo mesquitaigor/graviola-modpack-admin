@@ -26,22 +26,19 @@ export class RegistryDbService {
     );
   }
 
-  getById(id: number): Observable<RegistryData | undefined> {
+  getById(id: string): Observable<RegistryData | undefined> {
     return from(this.db.get<RegistryData>(this.dbStoreKey, id));
   }
 
-  add(data: Omit<RegistryData, 'id'>): Observable<IDBValidKey> {
-    if ('id' in data) {
-      delete data.id;
-    }
-    return from(this.db.add<Omit<RegistryData, 'id'>>(this.dbStoreKey, data));
+  add(data: RegistryData): Observable<IDBValidKey> {
+    return from(this.db.add<RegistryData>(this.dbStoreKey, data));
   }
 
   save(data: RegistryData): Observable<IDBValidKey> {
     return from(this.db.put<RegistryData>(this.dbStoreKey, data));
   }
 
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return from(this.db.delete(this.dbStoreKey, id));
   }
 }

@@ -77,17 +77,27 @@ export class RegistryService {
     return this.loadAll();
   }
 
-  getById(id: number): RegistryModel | undefined {
+  getById(id: string): RegistryModel | undefined {
     return this.registries.getValue().find((registry) => registry.id === id);
   }
 
   add(registry: Omit<RegistryModel, 'id'>): Observable<void> {
-    const data = RegistryMapper.toData(registry);
+    const now = new Date();
+    const id = crypto.randomUUID();
+    const modId = registry.namespace
+      ? registry.namespace.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+      : crypto.randomUUID();
+    const data = RegistryMapper.toData({
+      ...registry,
+      id,
+      modId: registry.modId ?? modId,
+      createdAt: registry.createdAt ?? now,
+    } as RegistryModel);
     return this.registryDb.add(data).pipe(switchMap(() => this.loadAll()));
   }
 
   update(
-    id: number,
+    id: string,
     changes: Partial<Omit<RegistryModel, 'id'>>,
   ): Observable<void> {
     const { id: _, ...changesData } = RegistryMapper.toData(
@@ -103,6 +113,7 @@ export class RegistryService {
       .save({
         ...RegistryMapper.toData(existing),
         ...changesData,
+        updatedAt: new Date().toISOString(),
       })
       .pipe(
         tap(() => {
@@ -110,7 +121,9 @@ export class RegistryService {
             this.registries
               .getValue()
               .map((registry) =>
-                registry.id === id ? { ...registry, ...changes } : registry,
+                registry.id === id
+                  ? { ...registry, ...changes, updatedAt: new Date() }
+                  : registry,
               ),
           );
         }),
@@ -118,7 +131,7 @@ export class RegistryService {
       );
   }
 
-  remove(id: number): Observable<void> {
+  remove(id: string): Observable<void> {
     return this.registryDb.delete(id).pipe(
       tap(() => {
         this.registries.next(

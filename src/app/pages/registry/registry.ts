@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import ItemModel from '../../models/item/item.model';
-import LangFileModel from '../../models/lang-file/lang-file.model';
+import LangModel from '../../models/lang/lang.model';
 import ItemTagModel from '../../models/item-tag/item-tag.model';
 import ItemTextureModel from '../../models/item-texture/item-texture.model';
 import { RegistryService } from '../../models/registry/registry.service';
@@ -53,8 +53,8 @@ export class Registry {
   private readonly registryService = inject(RegistryService);
 
   private readonly registryId = toSignal(
-    this.route.paramMap.pipe(map((params) => Number(params.get('id')))),
-    { initialValue: 0 },
+    this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
+    { initialValue: '' },
   );
   private readonly registries = toSignal(this.registryService.registries$, {
     initialValue: [],
@@ -64,17 +64,12 @@ export class Registry {
     this.registries().find((registry) => registry.id === this.registryId()),
   );
   public readonly items = computed(() => this.registry()?.items ?? []);
-  public readonly itemLangs = computed(() => this.registry()?.langsFiles ?? []);
+  public readonly itemLangs = computed(() => this.registry()?.langs ?? []);
   public readonly itemTags = computed(() => this.registry()?.itemTags ?? []);
   public readonly itemLangEntryCount = computed(() =>
-    this.itemLangs().reduce(
-      (count, lang) => count + Object.keys(lang.values ?? {}).length,
-      0,
-    ),
+    this.itemLangs().reduce((count, lang) => count + Object.keys(lang.values ?? {}).length, 0),
   );
-  public readonly itemTextures = computed(
-    () => this.registry()?.itemTextures ?? [],
-  );
+  public readonly itemTextures = computed(() => this.registry()?.itemTextures ?? []);
   public readonly texturePreview = signal<ItemTextureModel[]>([]);
   public readonly pendingTextureImports = signal<TextureImportReviewItem[]>([]);
   public readonly showUploadItemLangDialog = signal(false);
@@ -113,13 +108,11 @@ export class Registry {
     },
     updatedAt: undefined,
   });
-  public readonly resolveTextureSrc = (texture: ItemTextureModel) =>
-    this.textureSrc(texture);
+  public readonly resolveTextureSrc = (texture: ItemTextureModel) => this.textureSrc(texture);
   public readonly resolvePendingTextureSrc = (item: TextureImportReviewItem) =>
     this.pendingTextureSrc(item);
-  public readonly resolveExistingPendingTextureSrc = (
-    item: TextureImportReviewItem,
-  ) => this.existingPendingTextureSrc(item);
+  public readonly resolveExistingPendingTextureSrc = (item: TextureImportReviewItem) =>
+    this.existingPendingTextureSrc(item);
 
   private readonly textureObjectUrls = new Map<string, string>();
 
@@ -165,9 +158,7 @@ export class Registry {
 
       if (!imageFiles.length) {
         this.showUploadTexturesDialog.set(false);
-        this.uploadSummary.set(
-          'Nenhuma textura de imagem valida foi encontrada.',
-        );
+        this.uploadSummary.set('Nenhuma textura de imagem valida foi encontrada.');
         return;
       }
 
@@ -195,8 +186,7 @@ export class Registry {
           imageBlob: await this.fileToBlob(file),
           hasConflict: !!existingTexture,
           replaceConfirmed: !existingTexture,
-          existingItemName:
-            existingTexture?.itemName ?? existingTexture?.itemId ?? undefined,
+          existingItemName: existingTexture?.itemName ?? existingTexture?.itemId ?? undefined,
           existingImageBlob: existingTexture?.imageBlob,
         });
       }
@@ -230,9 +220,7 @@ export class Registry {
     });
 
     if (!currentRegistry?.id) {
-      this.itemTagsImportSummary.set(
-        'Registro nao encontrado para salvar tags.',
-      );
+      this.itemTagsImportSummary.set('Registro nao encontrado para salvar tags.');
       return;
     }
 
@@ -246,24 +234,17 @@ export class Registry {
     try {
       const tagFiles = files.filter((file) => this.isItemTagFile(file));
       if (!tagFiles.length) {
-        this.itemTagsImportSummary.set(
-          'Nenhum arquivo de tag valido foi encontrado.',
-        );
+        this.itemTagsImportSummary.set('Nenhum arquivo de tag valido foi encontrado.');
         return;
       }
 
       const parsedTags = await this.parseItemTags(tagFiles, currentRegistry);
       if (!parsedTags.length) {
-        this.itemTagsImportSummary.set(
-          'Nenhuma tag valida foi encontrada nos JSONs.',
-        );
+        this.itemTagsImportSummary.set('Nenhuma tag valida foi encontrada nos JSONs.');
         return;
       }
 
-      const mergedItemTags = this.mergeItemTags(
-        currentRegistry.itemTags ?? [],
-        parsedTags,
-      );
+      const mergedItemTags = this.mergeItemTags(currentRegistry.itemTags ?? [], parsedTags);
 
       await firstValueFrom(
         this.registryService.update(currentRegistry.id, {
@@ -293,9 +274,7 @@ export class Registry {
     });
 
     if (!currentRegistry?.id) {
-      this.itemLangImportSummary.set(
-        'Registro nao encontrado para salvar lang.',
-      );
+      this.itemLangImportSummary.set('Registro nao encontrado para salvar lang.');
       return;
     }
 
@@ -309,28 +288,21 @@ export class Registry {
     try {
       const langFiles = files.filter((file) => this.isItemLangFile(file));
       if (!langFiles.length) {
-        this.itemLangImportSummary.set(
-          'Nenhum arquivo de lang valido foi encontrado.',
-        );
+        this.itemLangImportSummary.set('Nenhum arquivo de lang valido foi encontrado.');
         return;
       }
 
       const parsedLangs = await this.parseItemLangFiles(langFiles);
       if (!parsedLangs.length) {
-        this.itemLangImportSummary.set(
-          'Nenhuma traducao valida foi encontrada nos JSONs.',
-        );
+        this.itemLangImportSummary.set('Nenhuma traducao valida foi encontrada nos JSONs.');
         return;
       }
 
-      const mergedItemLangs = this.mergeItemLangs(
-        currentRegistry.langsFiles ?? [],
-        parsedLangs,
-      );
+      const mergedItemLangs = this.mergeItemLangs(currentRegistry.langs ?? [], parsedLangs);
 
       await firstValueFrom(
         this.registryService.update(currentRegistry.id, {
-          langsFiles: mergedItemLangs,
+          langs: mergedItemLangs,
         }),
       );
 
@@ -357,17 +329,13 @@ export class Registry {
 
   public confirmTextureReplacement(key: string): void {
     this.pendingTextureImports.update((items) =>
-      items.map((item) =>
-        item.key === key ? { ...item, replaceConfirmed: true } : item,
-      ),
+      items.map((item) => (item.key === key ? { ...item, replaceConfirmed: true } : item)),
     );
   }
 
   public confirmAllTextureReplacements(): void {
     this.pendingTextureImports.update((items) =>
-      items.map((item) =>
-        item.hasConflict ? { ...item, replaceConfirmed: true } : item,
-      ),
+      items.map((item) => (item.hasConflict ? { ...item, replaceConfirmed: true } : item)),
     );
   }
 
@@ -481,7 +449,7 @@ export class Registry {
     return name.endsWith('.json') || file.type === 'application/json';
   }
 
-  private async parseItemLangFiles(files: File[]): Promise<LangFileModel[]> {
+  private async parseItemLangFiles(files: File[]): Promise<LangModel[]> {
     const langsByLocale = new Map<string, Record<string, string>>();
 
     for (const file of files) {
@@ -520,23 +488,17 @@ export class Registry {
 
     return Array.from(langsByLocale.entries())
       .map(([locale, values]) => ({ locale, values }))
-      .sort((left, right) =>
-        (left.locale ?? '').localeCompare(right.locale ?? ''),
-      );
+      .sort((left, right) => (left.locale ?? '').localeCompare(right.locale ?? ''));
   }
 
   private resolveLangLocale(file: File): string {
     const relativePath = this.getFileRelativePath(file).toLowerCase();
-    const fromPathMatch = relativePath.match(
-      /\/lang\/([a-z]{2}_[a-z]{2})\.json$/i,
-    );
+    const fromPathMatch = relativePath.match(/\/lang\/([a-z]{2}_[a-z]{2})\.json$/i);
     if (fromPathMatch?.[1]) {
       return fromPathMatch[1].toLowerCase();
     }
 
-    const fromNameMatch = file.name
-      .toLowerCase()
-      .match(/^([a-z]{2}_[a-z]{2})\.json$/);
+    const fromNameMatch = file.name.toLowerCase().match(/^([a-z]{2}_[a-z]{2})\.json$/);
     if (fromNameMatch?.[1]) {
       return fromNameMatch[1].toLowerCase();
     }
@@ -594,18 +556,12 @@ export class Registry {
       return '';
     }
 
-    const segments = rawSegments.map((segment) =>
-      this.normalizeTagPath(segment),
-    );
+    const segments = rawSegments.map((segment) => this.normalizeTagPath(segment));
     const tagsIndex = segments.findIndex((segment) => segment === 'tags');
-    const itemsIndex =
-      tagsIndex >= 0 && segments[tagsIndex + 1] === 'items'
-        ? tagsIndex + 1
-        : -1;
+    const itemsIndex = tagsIndex >= 0 && segments[tagsIndex + 1] === 'items' ? tagsIndex + 1 : -1;
 
     if (itemsIndex > 0) {
-      const namespace =
-        segments[tagsIndex - 1] || fallbackNamespace || 'minecraft';
+      const namespace = segments[tagsIndex - 1] || fallbackNamespace || 'minecraft';
       const tagPath = segments.slice(itemsIndex + 1).join('/');
       return this.normalizeTagPath(`${namespace}:${tagPath}`);
     }
@@ -621,15 +577,11 @@ export class Registry {
   }
 
   private getFileRelativePath(file: File): string {
-    const candidate = (file as File & { webkitRelativePath?: string })
-      .webkitRelativePath;
+    const candidate = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
     return (candidate || file.name).replace(/\\/g, '/');
   }
 
-  private mergeItemTags(
-    existingTags: ItemTagModel[],
-    newTags: ItemTagModel[],
-  ): ItemTagModel[] {
+  private mergeItemTags(existingTags: ItemTagModel[], newTags: ItemTagModel[]): ItemTagModel[] {
     const mergedById = new Map<string, ItemTagModel>();
 
     for (const tag of existingTags) {
@@ -661,11 +613,8 @@ export class Registry {
     );
   }
 
-  private mergeItemLangs(
-    existingLangs: LangFileModel[],
-    newLangs: LangFileModel[],
-  ): LangFileModel[] {
-    const mergedByLocale = new Map<string, LangFileModel>();
+  private mergeItemLangs(existingLangs: LangModel[], newLangs: LangModel[]): LangModel[] {
+    const mergedByLocale = new Map<string, LangModel>();
 
     for (const lang of existingLangs) {
       const locale = (lang.locale ?? '').trim().toLowerCase();
@@ -816,9 +765,7 @@ export class Registry {
     return objectUrl;
   }
 
-  public existingPendingTextureSrc(
-    item: TextureImportReviewItem,
-  ): string | undefined {
+  public existingPendingTextureSrc(item: TextureImportReviewItem): string | undefined {
     if (!item.existingImageBlob) {
       return undefined;
     }
@@ -851,10 +798,7 @@ export class Registry {
     this.textureObjectUrls.clear();
   }
 
-  private pickRandomTextures(
-    textures: ItemTextureModel[],
-    quantity: number,
-  ): ItemTextureModel[] {
+  private pickRandomTextures(textures: ItemTextureModel[], quantity: number): ItemTextureModel[] {
     const shuffled = [...textures].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, quantity);
   }
