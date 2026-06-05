@@ -44,7 +44,7 @@ export class EditModpackDialogComponent {
     await this.modpackService.update(this.modpackId(), {
       name: this.name.trim(),
       version: this.version.trim(),
-      icon: this.name.trim()[0].toUpperCase(),
+      icon: this.name.trim().charAt(0).toUpperCase(),
     });
     this.saving = false;
     this.visible = false;

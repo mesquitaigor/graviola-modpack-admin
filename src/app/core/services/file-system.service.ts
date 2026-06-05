@@ -63,7 +63,9 @@ export class FileSystemService {
       for (const segment of path.slice(0, -1)) {
         current = await current.getDirectoryHandle(segment);
       }
-      const fileHandle = await current.getFileHandle(path[path.length - 1]);
+      const filename = path[path.length - 1];
+      if (filename === undefined) return null;
+      const fileHandle = await current.getFileHandle(filename);
       const file = await fileHandle.getFile();
       return await file.text();
     } catch {
