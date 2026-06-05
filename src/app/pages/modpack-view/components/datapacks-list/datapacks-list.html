@@ -1,0 +1,52 @@
+<div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+  @if (datapackStatus() === "loading") {
+    <p class="text-sm text-slate-500">Carregando datapacks...</p>
+  } @else if (datapackStatus() === "empty") {
+    <p class="text-sm text-slate-500">Nenhum datapack cadastrado.</p>
+  } @else if (datapackStatus() === "ready") {
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2
+          class="text-sm font-semibold text-slate-600 uppercase tracking-wide"
+        >
+          Datapacks
+        </h2>
+        <button
+          type="button"
+          (click)="loadDatapacks()"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer"
+        >
+          Atualizar
+        </button>
+      </div>
+
+      <div class="grid gap-2">
+        @for (datapack of datapacks(); track datapack.id) {
+          <div
+            class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
+          >
+            <span class="text-sm text-slate-700"
+              >Datapack #{{ datapack.id }}</span
+            >
+            <span class="text-xs uppercase tracking-wide text-slate-400"
+              >id</span
+            >
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="flex items-center justify-between gap-4">
+      <p class="text-sm text-slate-500">
+        Clique em atualizar para carregar os datapacks desta pasta.
+      </p>
+      <button
+        type="button"
+        (click)="loadDatapacks()"
+        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+      >
+        Carregar
+      </button>
+    </div>
+  }
+</div>

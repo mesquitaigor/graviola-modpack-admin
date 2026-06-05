@@ -1,0 +1,57 @@
+<div>
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold text-slate-600 uppercase tracking-wide">
+      Logs
+    </h2>
+    @if (logStatus === "idle") {
+      <button
+        (click)="start()"
+        [disabled]="folderStatus() !== 'ok'"
+        class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      >
+        <i class="pi pi-play"></i>
+        Iniciar monitoramento
+      </button>
+    } @else {
+      <button
+        (click)="stop()"
+        class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer"
+      >
+        <i class="pi pi-stop"></i>
+        Parar
+      </button>
+    }
+  </div>
+
+  @switch (logStatus) {
+    @case ("idle") {
+      <div
+        class="flex items-center justify-center h-32 rounded-lg border border-dashed border-slate-200 bg-slate-50"
+      >
+        <p class="text-xs text-slate-400">
+          Clique em "Iniciar monitoramento" para ver os logs em tempo real.
+        </p>
+      </div>
+    }
+    @case ("file-not-found") {
+      <div
+        class="flex items-center justify-center h-32 rounded-lg border border-dashed border-amber-200 bg-amber-50"
+      >
+        <p class="text-xs text-amber-500">
+          Arquivo <code class="font-mono">logs/latest.log</code> não encontrado.
+        </p>
+      </div>
+    }
+    @default {
+      <div
+        class="h-96 overflow-y-auto rounded-lg bg-slate-900 p-4 font-mono text-xs leading-relaxed"
+      >
+        @for (line of logLines; track $index) {
+          <p [class]="getLineClass(line)">{{ line }}</p>
+        } @empty {
+          <p class="text-slate-500">Aguardando logs...</p>
+        }
+      </div>
+    }
+  }
+</div>

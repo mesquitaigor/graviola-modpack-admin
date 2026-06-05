@@ -1,0 +1,18 @@
+<div class="flex items-start justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">{{ modpack().name }}</h1>
+    <div class="flex items-center gap-3 mt-1">
+      <span class="text-xs text-slate-400">ID: {{ modpack().id }}</span>
+      <span class="text-xs text-slate-300">•</span>
+      <span class="text-xs text-slate-400">v{{ modpack().version }}</span>
+    </div>
+  </div>
+  <p-menu #menu [model]="menuItems" [popup]="true" />
+  <button
+    (click)="menu.toggle($event)"
+    class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+    title="Opções"
+  >
+    <i class="pi pi-ellipsis-v"></i>
+  </button>
+</div>

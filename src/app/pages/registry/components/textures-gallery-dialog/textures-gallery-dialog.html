@@ -1,0 +1,43 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(96vw, 72rem)' }"
+  header="Todas as texturas"
+>
+  <div
+    class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"
+  >
+    @for (
+      texture of textures;
+      track texture.itemId ?? texture.itemName ?? $index
+    ) {
+      <div class="rounded-md border border-slate-200 bg-white p-2">
+        <div
+          class="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden mx-auto"
+        >
+          @if (textureSrc(texture); as textureSrcValue) {
+            <img
+              [src]="textureSrcValue"
+              [alt]="texture.itemName || texture.itemId || 'Texture'"
+              class="w-full h-full object-contain"
+              [style.image-rendering]="'pixelated'"
+            />
+          } @else {
+            <i class="pi pi-image text-sm text-slate-400"></i>
+          }
+        </div>
+        <p
+          class="mt-1 text-[10px] font-medium text-slate-700 truncate text-center"
+        >
+          {{ texture.itemName || texture.itemId || "Sem nome" }}
+        </p>
+        <p class="text-[10px] text-slate-400 truncate text-center">
+          {{ texture.itemId || "Sem id" }}
+        </p>
+      </div>
+    }
+  </div>
+</p-dialog>

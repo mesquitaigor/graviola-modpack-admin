@@ -1,0 +1,79 @@
+<p-dialog
+  header="Adicionar recipe"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '48rem' }"
+  [closable]="true"
+>
+  <form [formGroup]="recipeForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-2">
+      <label for="group">
+        Grupo
+        <i
+          class="pi pi-info-circle text-platinum-400 text-sm cursor-help"
+          pTooltip='Adiciona a propriedade "group" na recipe. Quando ativa, exibe uma notificação para o jogador no chat ao desbloquear o item pela primeira vez.'
+          tooltipPosition="top"
+        ></i>
+      </label>
+      <input
+        pInputText
+        id="group"
+        aria-describedby="group-help"
+        formControlName="group"
+      />
+      <small id="group-help">Digite o grupo para a receita.</small>
+    </div>
+    <div class="flex flex-col gap-2">
+      <label for="category">
+        Categoria
+        <i
+          class="pi pi-info-circle text-platinum-400 text-sm cursor-help"
+          pTooltip='Adiciona a propriedade "category" na recipe. Quando ativa, exibe uma notificação para o jogador no chat ao desbloquear o item pela primeira vez.'
+          tooltipPosition="top"
+        ></i>
+      </label>
+      <input
+        pInputText
+        id="category"
+        aria-describedby="category-help"
+        formControlName="category"
+      />
+      <small id="category-help">Digite a categoria para a receita.</small>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-toggleswitch size="small" formControlName="showNotification" />
+      <div class="flex flex-col gap-1">
+        <label
+          class="flex items-center gap-1 text-sm font-medium text-platinum-700"
+        >
+          Mostrar notificação
+          <i
+            class="pi pi-info-circle text-platinum-400 text-sm cursor-help"
+            pTooltip='Adiciona a propriedade "show_notification: true" na recipe. Quando ativa, exibe uma notificação para o jogador no chat ao desbloquear o item pela primeira vez.'
+            tooltipPosition="top"
+          ></i>
+        </label>
+        <span class="opacity-40 text-sm">show_notification</span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <label for="group">
+        Padrão da receita
+        <i
+          class="pi pi-info-circle text-platinum-400 text-sm cursor-help"
+          pTooltip="É esperado um conjunto de até 3 letras."
+          tooltipPosition="top"
+        ></i>
+      </label>
+      <div class="grid grid-cols-3 gap-2 w-fit">
+        @for (item of patternSlots; track $index) {
+          <input
+            class="w-16"
+            pInputText
+            [formControlName]="'pattern' + $index"
+          />
+        }
+      </div>
+    </div>
+  </form>
+</p-dialog>

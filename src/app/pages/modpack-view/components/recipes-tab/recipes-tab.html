@@ -1,0 +1,29 @@
+<app-add-recipe-dialog #addRecipeDialog />
+<div class="py-4">
+  <div class="flex items-center justify-between">
+    <h4 class="text-lg font-semibold text-platinum-700">
+      Receitas adicionadas
+    </h4>
+    <p-button
+      size="small"
+      icon="pi pi-plus"
+      label="Adicionar receita"
+      (onClick)="addDialog()"
+    ></p-button>
+  </div>
+  <hr class="my-3 border-platinum-100" />
+  <div class="flex flex-col gap-3">
+    @for (recipe of addedRecipes(); track recipe.name) {
+      <div class="cursor-pointer flex gap-2 items-center pb-2">
+        <div
+          class="w-8 h-8 flex items-center justify-center rounded bg-seagrass-400"
+        >
+          <img class="w-4" src="/assets/icons/crafting_shaped_white.svg" />
+        </div>
+        <span class="text-sm font-semibold text-platinum-700">{{
+          recipe.name
+        }}</span>
+      </div>
+    }
+  </div>
+</div>

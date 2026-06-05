@@ -1,1 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-emerald-50: #ecf9f1;
+  --color-emerald-100: #d9f2e3;
+  --color-emerald-200: #b3e6c8;
+  --color-emerald-300: #8cd9ac;
+  --color-emerald-400: #66cc91;
+  --color-emerald-500: #40bf75;
+  --color-emerald-600: #33995e;
+  --color-emerald-700: #267346;
+  --color-emerald-800: #194d2f;
+  --color-emerald-900: #0d2617;
+  --color-emerald-950: #091b10;
+
+  --color-seagrass-50: #ebf9f6;
+  --color-seagrass-100: #d7f4ed;
+  --color-seagrass-200: #b0e8da;
+  --color-seagrass-300: #88ddc8;
+  --color-seagrass-400: #61d1b5;
+  --color-seagrass-500: #39c6a3;
+  --color-seagrass-600: #2e9e82;
+  --color-seagrass-700: #227762;
+  --color-seagrass-800: #174f41;
+  --color-seagrass-900: #0b2821;
+  --color-seagrass-950: #081c17;
+
+  --color-platinum-50: #f2f2f2;
+  --color-platinum-100: #e6e6e6;
+  --color-platinum-200: #cccccc;
+  --color-platinum-300: #b3b3b3;
+  --color-platinum-400: #999999;
+  --color-platinum-500: #808080;
+  --color-platinum-600: #666666;
+  --color-platinum-700: #4d4d4d;
+  --color-platinum-800: #333333;
+  --color-platinum-900: #1a1a1a;
+  --color-platinum-950: #121212;
+}
+
 /* You can add global styles to this file, and also import other style files */

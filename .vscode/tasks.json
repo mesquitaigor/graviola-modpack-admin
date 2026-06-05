@@ -37,6 +37,28 @@
           }
         }
       }
+    },
+    {
+      "label": "ng: generate page component (no test/style)",
+      "type": "shell",
+      "command": "npx",
+      "args": [
+        "ng",
+        "generate",
+        "component",
+        "pages/${input:pageComponentName}",
+        "--skip-tests",
+        "--style=none"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pageComponentName",
+      "type": "promptString",
+      "description": "Nome do componente dentro de src/app/pages (ex: user-list)",
+      "default": "new-component"
     }
   ]
 }

@@ -1,0 +1,56 @@
+@switch (status) {
+  @case ("checking") {
+    <span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
+      <i class="pi pi-spin pi-spinner"></i>
+      Verificando pasta...
+    </span>
+  }
+  @case ("ok") {
+    <div class="flex items-center gap-3">
+      <span
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+      >
+        <i class="pi pi-check-circle"></i>
+        {{ modpack().directoryHandle.name }}
+      </span>
+      <button
+        (click)="changeFolder()"
+        class="text-xs text-slate-400 hover:text-slate-600 font-medium underline cursor-pointer"
+      >
+        Alterar pasta
+      </button>
+    </div>
+  }
+  @case ("missing") {
+    <div class="flex items-center gap-3">
+      <span
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200"
+      >
+        <i class="pi pi-exclamation-triangle"></i>
+        Permissão negada
+      </span>
+      <button
+        (click)="fixFolder()"
+        class="text-xs text-amber-600 hover:text-amber-700 font-medium underline cursor-pointer"
+      >
+        Solicitar acesso
+      </button>
+    </div>
+  }
+  @case ("no-handle") {
+    <div class="flex items-center gap-3">
+      <span
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
+      >
+        <i class="pi pi-folder-open"></i>
+        Pasta não configurada
+      </span>
+      <button
+        (click)="fixFolder()"
+        class="text-xs text-red-600 hover:text-red-700 font-medium underline cursor-pointer"
+      >
+        Selecionar pasta
+      </button>
+    </div>
+  }
+}

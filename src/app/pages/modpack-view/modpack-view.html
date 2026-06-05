@@ -1,0 +1,49 @@
+<p-confirmDialog />
+<app-edit-modpack-dialog #editDialog [modpackId]="modpackId()" />
+
+<div class="p-8">
+  @if (modpack(); as pack) {
+    <div class="flex flex-col gap-5">
+      <app-modpack-header [modpack]="pack" />
+
+      <app-folder-status
+        class="block"
+        [modpack]="pack"
+        (statusChange)="folderStatus.set($event)"
+      />
+
+      <p-tabs
+        [value]="activeTab()"
+        (valueChange)="onTabValueChange($event)"
+        class="block"
+      >
+        <p-tablist>
+          <p-tab value="general">Geral</p-tab>
+          <p-tab value="datapacks">Datapacks</p-tab>
+          <p-tab value="recipes">Recipes</p-tab>
+        </p-tablist>
+
+        <p-tabpanels>
+          <p-tabpanel value="general">
+            <div class="space-y-6 pt-2">
+              <app-modpack-logs
+                class="block"
+                [directoryHandle]="pack.directoryHandle"
+                [folderStatus]="folderStatus()"
+              />
+            </div>
+          </p-tabpanel>
+
+          <p-tabpanel value="datapacks">
+            <app-datapacks-list [modpack]="pack" />
+          </p-tabpanel>
+          <p-tabpanel value="recipes">
+            <app-recipes-tab />
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  } @else {
+    <p class="text-slate-400">Modpack não encontrado.</p>
+  }
+</div>

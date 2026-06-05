@@ -1,0 +1,39 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(96vw, 42rem)' }"
+  header="Carregar texturas"
+>
+  <div class="space-y-4">
+    <div>
+      <label
+        for="registry-textures"
+        class="block text-sm font-medium text-slate-700 mb-2"
+      >
+        Selecione a pasta ou as imagens
+      </label>
+      <input
+        id="registry-textures"
+        type="file"
+        multiple
+        webkitdirectory
+        accept="image/*"
+        class="block w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+        (change)="onFilesSelected($event)"
+      />
+      <p class="text-xs text-slate-400 mt-2">
+        Selecione apenas imagens de textura dentro da pasta extraida do mod.
+      </p>
+    </div>
+
+    @if (uploadInProgress) {
+      <p class="text-xs text-slate-500">Processando texturas...</p>
+    }
+    @if (uploadSummary) {
+      <p class="text-xs text-slate-600">{{ uploadSummary }}</p>
+    }
+  </div>
+</p-dialog>
