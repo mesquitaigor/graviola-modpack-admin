@@ -12,7 +12,7 @@ import { UploadItemTagsDialogComponent } from './components/upload-item-tags-dia
 import { UploadTexturesDialogComponent } from './components/upload-textures-dialog/upload-textures-dialog';
 import { TexturesGalleryDialogComponent } from './components/textures-gallery-dialog/textures-gallery-dialog';
 import {
-  TextureImportReviewItem,
+  type TextureImportReviewItem,
   TexturesImportReviewDialogComponent,
 } from './components/textures-import-review-dialog/textures-import-review-dialog';
 import { ButtonModule } from 'primeng/button';
@@ -122,15 +122,18 @@ export class Registry {
   ) => this.existingPendingTextureSrc(item);
 
   private readonly textureObjectUrls = new Map<string, string>();
-  private readonly texturePreviewEffect = effect(() => {
-    const textures = this.itemTextures();
-    this.texturePreview.set(this.pickRandomTextures(textures, 5));
-    this.clearTextureUrlCache();
-  });
-  private readonly clearTextureUrlCacheEffect = effect(() => {
-    this.itemTextures();
-    this.clearTextureUrlCache();
-  });
+
+  constructor() {
+    effect(() => {
+      const textures = this.itemTextures();
+      this.texturePreview.set(this.pickRandomTextures(textures, 5));
+      this.clearTextureUrlCache();
+    });
+    effect(() => {
+      this.itemTextures();
+      this.clearTextureUrlCache();
+    });
+  }
 
   public updateNamespace(namespace: string): void {
     const currentRegistry = this.registry();
@@ -761,7 +764,7 @@ export class Registry {
       ? normalizedId.split(':', 2)
       : [this.registry()?.namespace || 'minecraft', normalizedId];
 
-    const normalizedPath = itemPath.replace(/[\/]/g, '.');
+    const normalizedPath = itemPath?.replace(/[\/]/g, '.');
     return `item.${namespace}.${normalizedPath}`;
   }
 
