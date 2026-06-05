@@ -115,7 +115,7 @@
 
       @for (registry of registries(); track registry.namespace) {
         <a
-          [routerLink]="registry.id != null ? ['/registry', registry.id] : null"
+          [routerLink]="registry.id !== null ? ['/registry', registry.id] : null"
           routerLinkActive="bg-emerald-50 text-emerald-700"
           [routerLinkActiveOptions]="{ exact: true }"
           class="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"

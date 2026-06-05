@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, effect, inject, signal, viewChild, type OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -33,7 +33,7 @@ import { RecipesTab } from './components/recipes-tab/recipes-tab';
   ],
   providers: [ConfirmationService],
 })
-export class ModpackViewComponent {
+export class ModpackViewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly modpackService = inject(ModpackService);

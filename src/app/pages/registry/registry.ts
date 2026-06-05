@@ -764,7 +764,7 @@ export class Registry {
       ? normalizedId.split(':', 2)
       : [this.registry()?.namespace || 'minecraft', normalizedId];
 
-    const normalizedPath = itemPath?.replace(/[\/]/g, '.');
+    const normalizedPath = itemPath?.replace(/\//g, '.');
     return `item.${namespace}.${normalizedPath}`;
   }
 

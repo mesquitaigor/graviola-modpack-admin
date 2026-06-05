@@ -90,7 +90,7 @@ export class RegistryService {
     id: number,
     changes: Partial<Omit<RegistryModel, 'id'>>,
   ): Observable<void> {
-    const { id: _ignoredId, ...changesData } = RegistryMapper.toData(
+    const { id: _, ...changesData } = RegistryMapper.toData(
       changes as RegistryModel,
     );
     const existing = this.getById(id);

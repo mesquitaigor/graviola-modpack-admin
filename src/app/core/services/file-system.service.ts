@@ -5,14 +5,14 @@ export class FileSystemService {
   async listDirectoryEntries(
     dir: FileSystemDirectoryHandle,
     ...path: string[]
-  ): Promise<Array<{ name: string; kind: FileSystemHandleKind }> | null> {
+  ): Promise<{ name: string; kind: FileSystemHandleKind }[] | null> {
     try {
       let current: FileSystemDirectoryHandle = dir;
       for (const segment of path) {
         current = await current.getDirectoryHandle(segment);
       }
 
-      const entries: Array<{ name: string; kind: FileSystemHandleKind }> = [];
+      const entries: { name: string; kind: FileSystemHandleKind }[] = [];
       for await (const [name, handle] of current.entries()) {
         entries.push({ name, kind: handle.kind });
       }
