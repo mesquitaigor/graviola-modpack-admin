@@ -1,7 +1,7 @@
-import { ItemData } from '../item/item.data';
-import LangFileData from '../lang-file/lang-file.data';
-import ItemTagData from '../item-tag/item-tag.data';
-import ItemTextureData from '../item-texture/item-texture.data';
+import type { ItemData } from '../item/item.data';
+import type LangFileData from '../lang-file/lang-file.data';
+import type ItemTagData from '../item-tag/item-tag.data';
+import type ItemTextureData from '../item-texture/item-texture.data';
 
 export default interface RegistryData {
   id?: number;

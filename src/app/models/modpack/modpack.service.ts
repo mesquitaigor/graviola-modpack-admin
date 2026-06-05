@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ModpackModel } from './modpack.model';
+import type { ModpackModel } from './modpack.model';
 import { ModpackDbService } from './modpack-db.service';
 
 @Injectable({ providedIn: 'root' })

@@ -9,7 +9,7 @@ import { ModpackService } from '../../models/modpack/modpack.service';
 import { EditModpackDialogComponent } from './components/edit-modpack-dialog/edit-modpack-dialog';
 import {
   FolderStatusComponent,
-  FolderStatus,
+  type FolderStatus,
 } from './components/folder-status/folder-status';
 import { ModpackLogsComponent } from './components/modpack-logs/modpack-logs';
 import { ModpackHeaderComponent } from './components/modpack-header/modpack-header';

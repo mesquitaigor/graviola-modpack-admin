@@ -1,4 +1,4 @@
-import ItemTextureData from './item-texture.data';
+import type ItemTextureData from './item-texture.data';
 import ItemTextureModel from './item-texture.model';
 
 export default class ItemTextureMapper {

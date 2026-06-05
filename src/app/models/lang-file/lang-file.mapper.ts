@@ -1,4 +1,4 @@
-import LangFileData from './lang-file.data';
+import type LangFileData from './lang-file.data';
 import LangFileModel from './lang-file.model';
 
 export default class LangFileMapper {

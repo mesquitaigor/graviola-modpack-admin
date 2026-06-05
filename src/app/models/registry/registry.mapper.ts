@@ -1,5 +1,5 @@
 import ItemMapper from '../item/item.mapper';
-import RegistryData from './registry.data';
+import type RegistryData from './registry.data';
 import LangFileMapper from '../lang-file/lang-file.mapper';
 import ItemTagMapper from '../item-tag/item-tag.mapper';
 import ItemTextureMapper from '../item-texture/item-texture.mapper';

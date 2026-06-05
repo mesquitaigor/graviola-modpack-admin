@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { IndexedDbService } from '../../shared/services/indexed-db.service';
-import RegistryData from './registry.data';
+import type RegistryData from './registry.data';
 import { from, Observable, of, switchMap } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })

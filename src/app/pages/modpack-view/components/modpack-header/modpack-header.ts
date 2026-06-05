@@ -1,7 +1,7 @@
 import { Component, inject, input, viewChild } from '@angular/core';
 import { MenuModule } from 'primeng/menu';
-import { ModpackModel } from '../../../../models/modpack/modpack.model';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import type { ModpackModel } from '../../../../models/modpack/modpack.model';
+import { ConfirmationService, type MenuItem } from 'primeng/api';
 import { EditModpackDialogComponent } from '../edit-modpack-dialog/edit-modpack-dialog';
 import { Router } from '@angular/router';
 import { ModpackService } from '../../../../models/modpack/modpack.service';

@@ -1,4 +1,4 @@
-import { ItemData } from './item.data';
+import type { ItemData } from './item.data';
 import ItemModel from './item.model';
 
 export default class ItemMapper {

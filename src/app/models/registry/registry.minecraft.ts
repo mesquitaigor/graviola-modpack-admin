@@ -1,5 +1,5 @@
 import { ITENS_VANILLA } from '../item/itens.vanilla';
-import RegistryData from './registry.data';
+import type RegistryData from './registry.data';
 
 export const MINECRAFT_REGISTRY: RegistryData = {
   namespace: 'minecraft',

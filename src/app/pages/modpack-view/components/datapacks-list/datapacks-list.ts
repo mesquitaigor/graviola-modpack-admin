@@ -1,7 +1,7 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { DatapackService } from '../../../../models/datapack/datapack.service';
 import DatapackModel from '../../../../models/datapack/datapack.model';
-import { ModpackModel } from '../../../../models/modpack/modpack.model';
+import type { ModpackModel } from '../../../../models/modpack/modpack.model';
 
 @Component({
   selector: 'app-datapacks-list',

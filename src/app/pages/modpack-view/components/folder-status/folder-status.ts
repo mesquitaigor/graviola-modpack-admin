@@ -1,5 +1,5 @@
-import { Component, inject, input, output, OnInit } from '@angular/core';
-import { ModpackModel } from '../../../../models/modpack/modpack.model';
+import { Component, inject, input, output, type OnInit } from '@angular/core';
+import type { ModpackModel } from '../../../../models/modpack/modpack.model';
 import { FileSystemService } from '../../../../core/services/file-system.service';
 import { ModpackService } from '../../../../models/modpack/modpack.service';
 

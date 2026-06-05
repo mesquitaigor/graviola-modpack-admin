@@ -1,4 +1,4 @@
-import ItemTagData from './item-tag.data';
+import type ItemTagData from './item-tag.data';
 import ItemTagModel from './item-tag.model';
 
 export default class ItemTagMapper {

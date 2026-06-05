@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { IndexedDbService } from '../../shared/services/indexed-db.service';
-import { ModpackModel } from './modpack.model';
+import type { ModpackModel } from './modpack.model';
 
 @Injectable({ providedIn: 'root' })
 export class ModpackDbService {

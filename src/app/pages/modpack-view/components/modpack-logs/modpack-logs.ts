@@ -4,10 +4,10 @@ import {
   input,
   effect,
   untracked,
-  OnDestroy,
+  type OnDestroy,
 } from '@angular/core';
 import { FileSystemService } from '../../../../core/services/file-system.service';
-import { FolderStatus } from '../folder-status/folder-status';
+import type { FolderStatus } from '../folder-status/folder-status';
 
 @Component({
   selector: 'app-modpack-logs',
