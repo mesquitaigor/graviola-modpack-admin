@@ -5,17 +5,22 @@
   <!-- Header -->
   <div
     class="flex items-center border-b border-slate-200 transition-all duration-300"
-    [class]="collapsed() ? 'px-3 py-4 justify-center' : 'px-5 py-4'"
+    [class]="collapsed() ? 'px-3 py-4 flex-col gap-3' : 'px-4 py-4'"
   >
     @if (!collapsed()) {
-      <div class="flex-1 min-w-0">
-        <h1 class="text-lg font-bold text-slate-800">Modpack Admin</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Gerenciador de modpacks</p>
+      <div class="flex items-center gap-2.5 flex-1 min-w-0">
+        <img src="assets/logo.svg" alt="Graviola logo" class="w-8 h-8 flex-none" />
+        <div class="min-w-0">
+          <h1 class="text-sm font-bold text-slate-800 leading-tight">Modpack Admin</h1>
+          <p class="text-[11px] text-slate-400">Gerenciador de modpacks</p>
+        </div>
       </div>
+    } @else {
+      <img src="assets/logo.svg" alt="Graviola logo" class="w-7 h-7" />
     }
     <button
       (click)="toggle()"
-      class="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+      class="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer flex-none"
       [title]="collapsed() ? 'Expandir menu' : 'Recolher menu'"
     >
       <i
