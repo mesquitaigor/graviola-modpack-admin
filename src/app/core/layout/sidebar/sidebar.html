@@ -103,14 +103,22 @@
           >
             Registros
           </p>
-          <span class="text-[11px] text-slate-400">{{
-            registries().length
-          }}</span>
+          <button
+            [routerLink]="['/registry/new']"
+            class="p-1 rounded-md text-slate-400 hover:bg-slate-100 hover:text-emerald-600 transition-colors cursor-pointer"
+            title="Adicionar registro"
+          >
+            <i class="pi pi-plus text-xs"></i>
+          </button>
         </div>
       } @else {
-        <div class="flex justify-center mb-1">
-          <i class="pi pi-database text-xs text-slate-400"></i>
-        </div>
+        <button
+          [routerLink]="['/registry/new']"
+          class="w-full flex justify-center p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-emerald-600 transition-colors cursor-pointer mb-1"
+          title="Adicionar registro"
+        >
+          <i class="pi pi-plus text-sm"></i>
+        </button>
       }
 
       @for (registry of registries(); track registry.namespace) {
@@ -130,12 +138,23 @@
 
           @if (!collapsed()) {
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">
-                {{ registry.name || "Sem nome" }}
-              </p>
-              <p class="text-xs text-slate-400">
-                {{ registry.version || "Sem versão" }}
-              </p>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <p class="text-sm font-medium truncate">
+                  {{ registry.name || "Sem nome" }}
+                </p>
+                @if (registry.namespace) {
+                  <span
+                    class="text-[10px] font-medium px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded flex-none"
+                  >
+                    {{ registry.namespace }}
+                  </span>
+                }
+              </div>
+              @if (registry.modId) {
+                <p class="text-xs text-slate-400 truncate">
+                  {{ registry.modId }}
+                </p>
+              }
             </div>
           }
         </a>

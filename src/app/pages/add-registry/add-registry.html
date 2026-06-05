@@ -1,0 +1,72 @@
+<div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 py-16">
+  <div class="w-full max-w-2xl">
+    <div class="mb-12 text-center">
+      <div
+        class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 mb-5"
+      >
+        <i class="pi pi-database text-2xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-slate-800">Adicionar registro</h1>
+      <p class="text-slate-500 mt-2 text-base">
+        Escolha como deseja adicionar um novo registro de mod.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <button
+        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+        (click)="selectMethod('manual')"
+      >
+        <div
+          class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors"
+        >
+          <i class="pi pi-pencil text-xl"></i>
+        </div>
+        <div>
+          <p class="font-semibold text-slate-800 text-sm text-center">Manual</p>
+          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+            Preencha os dados do mod manualmente.
+          </p>
+        </div>
+      </button>
+
+      <button
+        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+        (click)="selectMethod('jar')"
+      >
+        <div
+          class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+        >
+          <i class="pi pi-file text-xl"></i>
+        </div>
+        <div>
+          <p class="font-semibold text-slate-800 text-sm text-center">
+            Importar .jar
+          </p>
+          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+            Extraia os dados diretamente do arquivo do mod.
+          </p>
+        </div>
+      </button>
+
+      <button
+        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+        (click)="selectMethod('json')"
+      >
+        <div
+          class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+        >
+          <i class="pi pi-file-export text-xl"></i>
+        </div>
+        <div>
+          <p class="font-semibold text-slate-800 text-sm text-center">
+            Importar .json
+          </p>
+          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+            Importe um arquivo JSON com os dados do registro.
+          </p>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
