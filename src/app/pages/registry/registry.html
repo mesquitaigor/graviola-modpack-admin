@@ -1,31 +1,63 @@
+<p-confirmDialog />
+<p-toast />
+
 <section class="p-6 md:p-8">
   @if (registry(); as currentRegistry) {
     <header class="mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-800">
-        {{ currentRegistry.name || "Registro sem nome" }}
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">
-        {{ currentRegistry.version || "Sem versao" }}
-      </p>
-    </header>
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-none"
+          >
+            <i class="pi pi-database"></i>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800 truncate">
+            {{ currentRegistry.name || "Registro sem nome" }}
+          </h1>
+          @if (currentRegistry.namespace) {
+            <span
+              class="text-xs font-medium font-mono px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full flex-none"
+            >
+              {{ currentRegistry.namespace }}
+            </span>
+          }
+        </div>
 
-    <div class="mb-8">
-      <label
-        for="registry-namespace"
-        class="block text-sm font-medium text-slate-700 mb-2"
-      >
-        Namespace
-      </label>
-      <input
-        #namespaceInput
-        id="registry-namespace"
-        type="text"
-        class="w-full md:max-w-lg px-3 py-2 border border-slate-300 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400"
-        [value]="currentRegistry.namespace || ''"
-        (change)="updateNamespace(namespaceInput.value)"
-        placeholder="Digite o namespace"
-      />
-    </div>
+        <div class="flex items-center gap-1 flex-none">
+          @if (selectedVersion(); as version) {
+            <button
+              type="button"
+              class="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 cursor-pointer transition-colors hover:border-emerald-300 hover:bg-emerald-50"
+              (click)="openSelectVersionDialog()"
+            >
+              <span class="text-sm font-semibold font-mono text-slate-800">v{{ version.value }}</span>
+              @if (currentRegistry.namespace !== 'minecraft') {
+                <span class="text-xs text-slate-400 font-mono">MC {{ version.mcVersion }}</span>
+              }
+              <i class="pi pi-sync text-xs text-slate-400"></i>
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-400 cursor-pointer transition-colors hover:border-emerald-300 hover:text-emerald-700"
+              (click)="openAddVersionDialog()"
+            >
+              <i class="pi pi-plus text-xs"></i>
+              Adicionar versão
+            </button>
+          }
+
+          <p-button
+            icon="pi pi-ellipsis-v"
+            [text]="true"
+            severity="secondary"
+            size="small"
+            (onClick)="toggleMenu($event)"
+          />
+          <p-menu #registryMenu [model]="menuItems()" [popup]="true" />
+        </div>
+      </div>
+    </header>
 
     <section class="mb-8">
       <div class="flex justify-between items-center mb-4">
@@ -34,7 +66,7 @@
           size="small"
           icon="pi pi-plus"
           label="Adicionar item"
-          (click)="showAddItemDialog.set(true)"
+          (click)="dialogs.open('addItem')"
         ></p-button>
       </div>
 
@@ -134,7 +166,7 @@
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800 transition-colors hover:border-indigo-400 hover:bg-indigo-100 cursor-pointer"
-            (click)="showUploadItemLangDialog.set(true)"
+            (click)="dialogs.open('uploadItemLang')"
           >
             <i class="pi pi-language text-xs"></i>
             Carregar lang
@@ -143,7 +175,7 @@
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 cursor-pointer"
-            (click)="showUploadItemTagsDialog.set(true)"
+            (click)="dialogs.open('uploadItemTags')"
           >
             <i class="pi pi-tags text-xs"></i>
             Carregar tags
@@ -152,7 +184,7 @@
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 cursor-pointer"
-            (click)="showUploadTexturesDialog.set(true)"
+            (click)="dialogs.open('uploadTextures')"
           >
             <i class="pi pi-upload text-xs"></i>
             Carregar texturas
@@ -162,7 +194,7 @@
             <button
               type="button"
               class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer"
-              (click)="showAllTexturesDialog.set(true)"
+              (click)="dialogs.open('allTextures')"
             >
               <i class="pi pi-images text-xs"></i>
               Visualizar todas
@@ -210,32 +242,41 @@
     </section>
 
     <app-upload-textures-dialog
-      [visible]="showUploadTexturesDialog()"
-      (visibleChange)="showUploadTexturesDialog.set($event)"
+      [visible]="dialogs.isOpen('uploadTextures')()"
+      (visibleChange)="dialogs.setOpen('uploadTextures', $event)"
       [uploadInProgress]="uploadInProgress()"
       [uploadSummary]="uploadSummary()"
       (filesSelected)="uploadTextures($event)"
     />
 
     <app-upload-item-tags-dialog
-      [visible]="showUploadItemTagsDialog()"
-      (visibleChange)="showUploadItemTagsDialog.set($event)"
+      [visible]="dialogs.isOpen('uploadItemTags')()"
+      (visibleChange)="dialogs.setOpen('uploadItemTags', $event)"
       [importInProgress]="itemTagsImportInProgress()"
       [importSummary]="itemTagsImportSummary()"
       (filesSelected)="uploadItemTags($event)"
     />
 
+    <app-item-tags-import-review-dialog
+      [visible]="dialogs.isOpen('itemTagImportReview')()"
+      (visibleChange)="dialogs.setOpen('itemTagImportReview', $event)"
+      [items]="pendingItemTagImports()"
+      [importInProgress]="itemTagsImportInProgress()"
+      (cancelImport)="cancelItemTagImport()"
+      (confirmImport)="confirmItemTagImport($event)"
+    />
+
     <app-upload-item-lang-dialog
-      [visible]="showUploadItemLangDialog()"
-      (visibleChange)="showUploadItemLangDialog.set($event)"
+      [visible]="dialogs.isOpen('uploadItemLang')()"
+      (visibleChange)="dialogs.setOpen('uploadItemLang', $event)"
       [importInProgress]="itemLangImportInProgress()"
       [importSummary]="itemLangImportSummary()"
       (filesSelected)="uploadItemLang($event)"
     />
 
     <app-textures-import-review-dialog
-      [visible]="showImportReviewDialog()"
-      (visibleChange)="showImportReviewDialog.set($event)"
+      [visible]="dialogs.isOpen('textureImportReview')()"
+      (visibleChange)="dialogs.setOpen('textureImportReview', $event)"
       [items]="pendingTextureImports()"
       [importInProgress]="uploadInProgress()"
       [previewSrc]="resolvePendingTextureSrc"
@@ -247,8 +288,8 @@
     />
 
     <app-textures-gallery-dialog
-      [visible]="showAllTexturesDialog()"
-      (visibleChange)="showAllTexturesDialog.set($event)"
+      [visible]="dialogs.isOpen('allTextures')()"
+      (visibleChange)="dialogs.setOpen('allTextures', $event)"
       [textures]="itemTextures()"
       [textureSrc]="resolveTextureSrc"
     />
@@ -258,6 +299,11 @@
 </section>
 
 <app-add-item-dialog
-  [visible]="showAddItemDialog()"
-  (visibleChange)="showAddItemDialog.set($event)"
+  [visible]="dialogs.isOpen('addItem')()"
+  (visibleChange)="dialogs.setOpen('addItem', $event)"
+  [idSuggestions]="itemIdSuggestions()"
+  [nameSuggestions]="itemNameSuggestions()"
+  (itemAdd)="addItem($event)"
+  (importTagsRequest)="dialogs.open('uploadItemTags')"
+  (importLangRequest)="openUploadVersionLangDialog()"
 ></app-add-item-dialog>

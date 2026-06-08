@@ -1,14 +1,18 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 import ItemModel from '../../models/item/item.model';
-import LangModel from '../../models/lang/lang.model';
 import ItemTagModel from '../../models/item-tag/item-tag.model';
 import ItemTextureModel from '../../models/item-texture/item-texture.model';
 import { RegistryService } from '../../models/registry/registry.service';
 import { UploadItemLangDialogComponent } from './components/upload-item-lang-dialog/upload-item-lang-dialog';
 import { UploadItemTagsDialogComponent } from './components/upload-item-tags-dialog/upload-item-tags-dialog';
+import {
+  type ItemTagImportReviewItem,
+  ItemTagsImportReviewDialogComponent,
+} from './components/item-tags-import-review-dialog/item-tags-import-review-dialog';
 import { UploadTexturesDialogComponent } from './components/upload-textures-dialog/upload-textures-dialog';
 import { TexturesGalleryDialogComponent } from './components/textures-gallery-dialog/textures-gallery-dialog';
 import {
@@ -16,7 +20,30 @@ import {
   TexturesImportReviewDialogComponent,
 } from './components/textures-import-review-dialog/textures-import-review-dialog';
 import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ConfirmationService, MessageService, type MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
 import { AddItemDialogComponent } from './components/add-item-dialog/add-item-dialog';
+import type { ItemAddEvent } from './components/add-item-dialog/add-item-dialog';
+import { AddVersionDialogComponent } from './components/add-version-dialog/add-version-dialog';
+import type { AddVersionDialogData } from './components/add-version-dialog/add-version-dialog';
+import { SelectVersionDialogComponent } from './components/select-version-dialog/select-version-dialog';
+import type { SelectVersionDialogData } from './components/select-version-dialog/select-version-dialog';
+import { EditRegistryDialogComponent } from './components/edit-registry-dialog/edit-registry-dialog';
+import type { EditRegistryDialogData } from './components/edit-registry-dialog/edit-registry-dialog';
+import { UploadVersionLangDialogComponent } from './components/upload-version-lang-dialog/upload-version-lang-dialog';
+import { fileBaseName, fileToBlob, isImageFile, isJsonFile } from './helpers/file.helper';
+import { normalizeKey, normalizeTagPath } from './helpers/text-normalize.helper';
+import { mergeItemTags, parseItemTags } from './helpers/item-tag-import.helper';
+import {
+  filterLangsByKeyPrefix,
+  mergeItemLangs,
+  parseItemLangFiles,
+} from './helpers/item-lang-import.helper';
+import { RegistryDialogsService } from './services/registry-dialogs.service';
+import { DialogService } from '../../core/services/dialog.service';
 
 type ImportSource = 'textures' | 'tags' | 'lang';
 
@@ -38,19 +65,31 @@ interface RegistryImportSession {
 @Component({
   selector: 'app-registry',
   imports: [
+    FormsModule,
     ButtonModule,
+    InputTextModule,
+    MenuModule,
+    ConfirmDialogModule,
+    ToastModule,
     AddItemDialogComponent,
     UploadItemLangDialogComponent,
     UploadItemTagsDialogComponent,
+    ItemTagsImportReviewDialogComponent,
     UploadTexturesDialogComponent,
     TexturesGalleryDialogComponent,
     TexturesImportReviewDialogComponent,
   ],
+  providers: [ConfirmationService, MessageService, RegistryDialogsService],
   templateUrl: './registry.html',
 })
 export class Registry {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly registryService = inject(RegistryService);
+  private readonly confirmation = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
+  private readonly dialogService = inject(DialogService);
+  protected readonly dialogs = inject(RegistryDialogsService);
 
   private readonly registryId = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
@@ -63,21 +102,61 @@ export class Registry {
   public readonly registry = computed(() =>
     this.registries().find((registry) => registry.id === this.registryId()),
   );
-  public readonly items = computed(() => this.registry()?.items ?? []);
+  public readonly versions = computed(() => this.registry()?.versions ?? []);
+  public readonly selectedVersionIndex = signal(0);
+  public readonly selectedVersion = computed(() => this.versions()[this.selectedVersionIndex()]);
+
+  private readonly menuRef = viewChild<Menu>('registryMenu');
+
+  protected readonly menuItems = computed<MenuItem[]>(() => {
+    const items: MenuItem[] = [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.openEditRegistryDialog(),
+      },
+    ];
+
+    if (this.selectedVersion()) {
+      items.push({
+        label: 'Deletar versão',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-600',
+        command: () => this.confirmDeleteVersion(),
+      });
+    }
+
+    items.push(
+      { separator: true },
+      {
+        label: 'Deletar registro',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-600',
+        command: () => this.confirmDeleteRegistry(),
+      },
+    );
+
+    return items;
+  });
+  public readonly items = computed(() => this.selectedVersion()?.items ?? []);
   public readonly itemLangs = computed(() => this.registry()?.langs ?? []);
   public readonly itemTags = computed(() => this.registry()?.itemTags ?? []);
+  public readonly itemIdSuggestions = computed(() => {
+    const ids = this.itemTags().flatMap((tag) => tag.values ?? []);
+    return [...new Set(ids)].sort();
+  });
+  public readonly versionLangs = computed(() => this.selectedVersion()?.langs ?? []);
+  public readonly itemNameSuggestions = computed(() => {
+    const names = this.versionLangs().flatMap((lang) => Object.values(lang.values ?? {}));
+    return [...new Set(names)].sort();
+  });
   public readonly itemLangEntryCount = computed(() =>
     this.itemLangs().reduce((count, lang) => count + Object.keys(lang.values ?? {}).length, 0),
   );
   public readonly itemTextures = computed(() => this.registry()?.itemTextures ?? []);
   public readonly texturePreview = signal<ItemTextureModel[]>([]);
   public readonly pendingTextureImports = signal<TextureImportReviewItem[]>([]);
-  public readonly showUploadItemLangDialog = signal(false);
-  public readonly showUploadItemTagsDialog = signal(false);
-  public readonly showUploadTexturesDialog = signal(false);
-  public readonly showImportReviewDialog = signal(false);
-  public readonly showAllTexturesDialog = signal(false);
-  public readonly showAddItemDialog = signal(false);
+  public readonly pendingItemTagImports = signal<ItemTagImportReviewItem[]>([]);
   public readonly itemLangImportInProgress = signal(false);
   public readonly itemLangImportSummary = signal('');
   public readonly itemTagsImportInProgress = signal(false);
@@ -128,6 +207,148 @@ export class Registry {
     });
   }
 
+  public openSelectVersionDialog(): void {
+    const id = this.registry()?.id;
+    if (!id) return;
+    this.dialogService.open<void, SelectVersionDialogData>(SelectVersionDialogComponent, {
+      header: 'Versões do mod',
+      width: '26rem',
+      data: {
+        registryId: id,
+        versions: this.versions,
+        selectedVersionIndex: this.selectedVersionIndex,
+      },
+    });
+  }
+
+  public openAddVersionDialog(): void {
+    const id = this.registry()?.id;
+    if (!id) return;
+    this.dialogService.open<void, AddVersionDialogData>(AddVersionDialogComponent, {
+      header: 'Adicionar versão',
+      width: '22rem',
+      data: {
+        registryId: id,
+        versions: this.versions,
+        selectedVersionIndex: this.selectedVersionIndex,
+      },
+    });
+  }
+
+  public toggleMenu(event: MouseEvent): void {
+    this.menuRef()?.toggle(event);
+  }
+
+  public openEditRegistryDialog(): void {
+    const currentRegistry = this.registry();
+    if (!currentRegistry?.id) return;
+
+    this.dialogService.open<void, EditRegistryDialogData>(EditRegistryDialogComponent, {
+      header: 'Editar registro',
+      width: '22rem',
+      data: {
+        registryId: currentRegistry.id,
+        name: currentRegistry.name ?? '',
+        namespace: currentRegistry.namespace ?? '',
+      },
+    });
+  }
+
+  public confirmDeleteVersion(): void {
+    const version = this.selectedVersion();
+    const currentRegistry = this.registry();
+    if (!version || !currentRegistry?.id) return;
+
+    const registryId = currentRegistry.id;
+    const index = this.selectedVersionIndex();
+
+    this.confirmation.confirm({
+      message: `Tem certeza que deseja deletar a versão "v${version.value}" (MC ${version.mcVersion})? Esta ação não pode ser desfeita.`,
+      header: 'Deletar versão',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Deletar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        try {
+          const updatedVersions = this.versions().filter((_, i) => i !== index);
+          await firstValueFrom(
+            this.registryService.update(registryId, { versions: updatedVersions }),
+          );
+          this.selectedVersionIndex.set(Math.min(index, Math.max(0, updatedVersions.length - 1)));
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Versão deletada',
+            detail: `A versão "v${version.value}" foi removida com sucesso.`,
+          });
+        } catch (e) {
+          console.error(e);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao deletar versão',
+            detail: 'Não foi possível remover a versão. Tente novamente.',
+          });
+        }
+      },
+    });
+  }
+
+  public confirmDeleteRegistry(): void {
+    const currentRegistry = this.registry();
+    if (!currentRegistry?.id) return;
+
+    const registryId = currentRegistry.id;
+    const registryName = currentRegistry.name || 'Registro sem nome';
+
+    this.confirmation.confirm({
+      message: `Tem certeza que deseja deletar o registro "${registryName}"? Esta ação não pode ser desfeita.`,
+      header: 'Deletar registro',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Deletar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        try {
+          await firstValueFrom(this.registryService.remove(registryId));
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Registro deletado',
+            detail: `O registro "${registryName}" foi removido com sucesso.`,
+          });
+          this.router.navigate(['/']);
+        } catch (e) {
+          console.error(e);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao deletar registro',
+            detail: 'Não foi possível remover o registro. Tente novamente.',
+          });
+        }
+      },
+    });
+  }
+
+  public async addItem(event: ItemAddEvent): Promise<void> {
+    const currentRegistry = this.registry();
+    const version = this.selectedVersion();
+    if (!currentRegistry?.id || !version) return;
+
+    const index = this.selectedVersionIndex();
+    const newItem = new ItemModel();
+    newItem.id = event.id;
+    newItem.name = event.name;
+    newItem.iconDataUrl = event.iconDataUrl;
+    const updatedItems = [...(version.items ?? []), newItem];
+    const updatedVersions = this.versions().map((v, i) =>
+      i === index ? { ...v, items: updatedItems } : v,
+    );
+
+    await firstValueFrom(
+      this.registryService.update(currentRegistry.id, { versions: updatedVersions }),
+    );
+    this.dialogs.close('addItem');
+  }
+
   public updateNamespace(namespace: string): void {
     const currentRegistry = this.registry();
     if (!currentRegistry?.id) {
@@ -154,17 +375,17 @@ export class Registry {
     }
 
     try {
-      const imageFiles = files.filter((file) => this.isTextureFile(file));
+      const imageFiles = files.filter((file) => isImageFile(file));
 
       if (!imageFiles.length) {
-        this.showUploadTexturesDialog.set(false);
+        this.dialogs.close('uploadTextures');
         this.uploadSummary.set('Nenhuma textura de imagem valida foi encontrada.');
         return;
       }
 
       const existingTextures = new Map<string, ItemTextureModel>();
       for (const texture of currentRegistry.itemTextures ?? []) {
-        const key = this.normalizeKey(texture.itemId ?? texture.itemName);
+        const key = normalizeKey(texture.itemId ?? texture.itemName);
         if (key) {
           existingTextures.set(key, texture);
         }
@@ -173,7 +394,7 @@ export class Registry {
       const reviewItems: TextureImportReviewItem[] = [];
 
       for (const file of imageFiles) {
-        const itemKey = this.normalizeKey(file.name);
+        const itemKey = normalizeKey(file.name);
         if (!itemKey) {
           continue;
         }
@@ -182,8 +403,8 @@ export class Registry {
         reviewItems.push({
           key: itemKey,
           fileName: file.name,
-          itemName: this.fileBaseName(file.name),
-          imageBlob: await this.fileToBlob(file),
+          itemName: fileBaseName(file.name),
+          imageBlob: await fileToBlob(file),
           hasConflict: !!existingTexture,
           replaceConfirmed: !existingTexture,
           existingItemName: existingTexture?.itemName ?? existingTexture?.itemId ?? undefined,
@@ -200,8 +421,7 @@ export class Registry {
       });
 
       this.pendingTextureImports.set(sortedReviewItems);
-      this.showUploadTexturesDialog.set(false);
-      this.showImportReviewDialog.set(true);
+      this.dialogs.closeAndOpen('uploadTextures', 'textureImportReview');
       this.uploadSummary.set('');
       this.updateImportSession('textures', {
         importedEntries: sortedReviewItems.length,
@@ -232,19 +452,66 @@ export class Registry {
     this.itemTagsImportInProgress.set(true);
 
     try {
-      const tagFiles = files.filter((file) => this.isItemTagFile(file));
+      const tagFiles = files.filter((file) => isJsonFile(file));
       if (!tagFiles.length) {
         this.itemTagsImportSummary.set('Nenhum arquivo de tag valido foi encontrado.');
         return;
       }
 
-      const parsedTags = await this.parseItemTags(tagFiles, currentRegistry);
+      const parsedTags = await parseItemTags(tagFiles, currentRegistry.namespace);
       if (!parsedTags.length) {
         this.itemTagsImportSummary.set('Nenhuma tag valida foi encontrada nos JSONs.');
         return;
       }
 
-      const mergedItemTags = this.mergeItemTags(currentRegistry.itemTags ?? [], parsedTags);
+      const existingTagIds = new Set(
+        (currentRegistry.itemTags ?? [])
+          .map((tag) => normalizeTagPath(tag.tagId ?? ''))
+          .filter((tagId) => !!tagId),
+      );
+
+      const reviewItems: ItemTagImportReviewItem[] = parsedTags.map((tag) => ({
+        tagId: tag.tagId ?? '',
+        values: tag.values ?? [],
+        alreadyExists: existingTagIds.has(normalizeTagPath(tag.tagId ?? '')),
+      }));
+
+      this.pendingItemTagImports.set(reviewItems);
+      this.dialogs.closeAndOpen('uploadItemTags', 'itemTagImportReview');
+    } catch (e) {
+      console.error(e);
+      this.itemTagsImportSummary.set('Erro ao importar tags de itens.');
+    } finally {
+      this.itemTagsImportInProgress.set(false);
+    }
+  }
+
+  public cancelItemTagImport(): void {
+    this.pendingItemTagImports.set([]);
+    this.dialogs.close('itemTagImportReview');
+  }
+
+  public async confirmItemTagImport(items: ItemTagImportReviewItem[]): Promise<void> {
+    const currentRegistry = this.registry();
+    if (!currentRegistry?.id) {
+      this.itemTagsImportSummary.set('Registro nao encontrado para salvar tags.');
+      return;
+    }
+
+    if (!items.length) {
+      this.cancelItemTagImport();
+      return;
+    }
+
+    this.itemTagsImportInProgress.set(true);
+
+    try {
+      const newTags: ItemTagModel[] = items.map((item) => ({
+        tagId: item.tagId,
+        values: [...item.values],
+      }));
+
+      const mergedItemTags = mergeItemTags(currentRegistry.itemTags ?? [], newTags);
 
       await firstValueFrom(
         this.registryService.update(currentRegistry.id, {
@@ -252,12 +519,13 @@ export class Registry {
         }),
       );
 
-      this.showUploadItemTagsDialog.set(false);
+      this.pendingItemTagImports.set([]);
+      this.dialogs.close('itemTagImportReview');
       this.itemTagsImportSummary.set(
-        `${parsedTags.length} tag(s) de item importada(s) com sucesso.`,
+        `${newTags.length} tag(s) de item importada(s) com sucesso.`,
       );
       this.updateImportSession('tags', {
-        importedEntries: parsedTags.length,
+        importedEntries: newTags.length,
       });
     } catch (e) {
       console.error(e);
@@ -286,19 +554,19 @@ export class Registry {
     this.itemLangImportInProgress.set(true);
 
     try {
-      const langFiles = files.filter((file) => this.isItemLangFile(file));
+      const langFiles = files.filter((file) => isJsonFile(file));
       if (!langFiles.length) {
         this.itemLangImportSummary.set('Nenhum arquivo de lang valido foi encontrado.');
         return;
       }
 
-      const parsedLangs = await this.parseItemLangFiles(langFiles);
+      const parsedLangs = await parseItemLangFiles(langFiles);
       if (!parsedLangs.length) {
         this.itemLangImportSummary.set('Nenhuma traducao valida foi encontrada nos JSONs.');
         return;
       }
 
-      const mergedItemLangs = this.mergeItemLangs(currentRegistry.langs ?? [], parsedLangs);
+      const mergedItemLangs = mergeItemLangs(currentRegistry.langs ?? [], parsedLangs);
 
       await firstValueFrom(
         this.registryService.update(currentRegistry.id, {
@@ -311,7 +579,7 @@ export class Registry {
         0,
       );
 
-      this.showUploadItemLangDialog.set(false);
+      this.dialogs.close('uploadItemLang');
       this.itemLangImportSummary.set(
         `${parsedLangs.length} locale(s) e ${importedEntries} traducao(oes) importada(s) com sucesso.`,
       );
@@ -324,6 +592,68 @@ export class Registry {
       this.itemLangImportSummary.set('Erro ao importar arquivos de lang.');
     } finally {
       this.itemLangImportInProgress.set(false);
+    }
+  }
+
+  public openUploadVersionLangDialog(): void {
+    const ref = this.dialogService.open<File[]>(UploadVersionLangDialogComponent, {
+      header: 'Carregar arquivos de lang',
+      width: 'min(96vw, 42rem)',
+    });
+
+    ref.closed.subscribe((files) => {
+      if (files?.length) {
+        this.uploadVersionLang(files);
+      }
+    });
+  }
+
+  private async uploadVersionLang(files: File[]): Promise<void> {
+    const currentRegistry = this.registry();
+    const version = this.selectedVersion();
+    const index = this.selectedVersionIndex();
+
+    if (!currentRegistry?.id || !version) return;
+
+    try {
+      const langFiles = files.filter((file) => isJsonFile(file));
+      const parsedLangs = await parseItemLangFiles(langFiles);
+      const itemLangs = filterLangsByKeyPrefix(parsedLangs, 'item.');
+      if (!itemLangs.length) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Nenhuma tradução importada',
+          detail: 'Nenhuma traducao de item (prefixo "item.") foi encontrada nos JSONs selecionados.',
+        });
+        return;
+      }
+
+      const mergedLangs = mergeItemLangs(version.langs ?? [], itemLangs);
+      const updatedVersions = this.versions().map((v, i) =>
+        i === index ? { ...v, langs: mergedLangs } : v,
+      );
+
+      await firstValueFrom(
+        this.registryService.update(currentRegistry.id, { versions: updatedVersions }),
+      );
+
+      const importedEntries = itemLangs.reduce(
+        (count, lang) => count + Object.keys(lang.values ?? {}).length,
+        0,
+      );
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Lang importada',
+        detail: `${itemLangs.length} locale(s) e ${importedEntries} traducao(oes) de item importada(s) com sucesso.`,
+      });
+    } catch (e) {
+      console.error(e);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Erro ao importar lang',
+        detail: 'Não foi possível importar os arquivos de lang da versão. Tente novamente.',
+      });
     }
   }
 
@@ -341,7 +671,7 @@ export class Registry {
 
   public cancelTextureImport(): void {
     this.pendingTextureImports.set([]);
-    this.showImportReviewDialog.set(false);
+    this.dialogs.close('textureImportReview');
   }
 
   public async confirmTextureImport(): Promise<void> {
@@ -357,7 +687,7 @@ export class Registry {
       const texturesByKey = new Map<string, ItemTextureModel>();
 
       for (const texture of currentRegistry.itemTextures ?? []) {
-        const key = this.normalizeKey(texture.itemId ?? texture.itemName);
+        const key = normalizeKey(texture.itemId ?? texture.itemName);
         if (key) {
           texturesByKey.set(key, texture);
         }
@@ -386,7 +716,7 @@ export class Registry {
       );
 
       this.pendingTextureImports.set([]);
-      this.showImportReviewDialog.set(false);
+      this.dialogs.close('textureImportReview');
       this.uploadSummary.set(
         skippedConflicts
           ? `${importedCount} textura(s) importada(s). ${skippedConflicts} conflito(s) nao confirmado(s) foram ignorados.`
@@ -402,251 +732,6 @@ export class Registry {
     } finally {
       this.uploadInProgress.set(false);
     }
-  }
-
-  private normalizeKey(value?: string): string {
-    return (value ?? '')
-      .toLowerCase()
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-  }
-
-  private normalizeTagValue(value: string): string {
-    return value.trim().toLowerCase();
-  }
-
-  private normalizeTagPath(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/\\/g, '/')
-      .replace(/[^a-z0-9_/:.-]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '');
-  }
-
-  private fileBaseName(fileName: string): string {
-    return fileName.replace(/\.[^/.]+$/, '');
-  }
-
-  private isTextureFile(file: File): boolean {
-    if (file.type.startsWith('image/')) {
-      return true;
-    }
-
-    const name = file.name.toLowerCase();
-    return /(\.png|\.jpg|\.jpeg|\.webp|\.gif|\.bmp|\.tga)$/.test(name);
-  }
-
-  private isItemTagFile(file: File): boolean {
-    const name = file.name.toLowerCase();
-    return name.endsWith('.json') || file.type === 'application/json';
-  }
-
-  private isItemLangFile(file: File): boolean {
-    const name = file.name.toLowerCase();
-    return name.endsWith('.json') || file.type === 'application/json';
-  }
-
-  private async parseItemLangFiles(files: File[]): Promise<LangModel[]> {
-    const langsByLocale = new Map<string, Record<string, string>>();
-
-    for (const file of files) {
-      try {
-        const text = await file.text();
-        const payload = JSON.parse(text) as Record<string, unknown>;
-        const values: Record<string, string> = {};
-
-        for (const [key, value] of Object.entries(payload)) {
-          if (typeof value !== 'string') {
-            continue;
-          }
-
-          const normalizedKey = key.trim().toLowerCase();
-          if (!normalizedKey) {
-            continue;
-          }
-
-          values[normalizedKey] = value.trim();
-        }
-
-        const locale = this.resolveLangLocale(file);
-        if (!locale || !Object.keys(values).length) {
-          continue;
-        }
-
-        const currentValues = langsByLocale.get(locale) ?? {};
-        langsByLocale.set(locale, {
-          ...currentValues,
-          ...values,
-        });
-      } catch (error) {
-        console.warn('Arquivo de lang invalido ignorado:', file.name, error);
-      }
-    }
-
-    return Array.from(langsByLocale.entries())
-      .map(([locale, values]) => ({ locale, values }))
-      .sort((left, right) => (left.locale ?? '').localeCompare(right.locale ?? ''));
-  }
-
-  private resolveLangLocale(file: File): string {
-    const relativePath = this.getFileRelativePath(file).toLowerCase();
-    const fromPathMatch = relativePath.match(/\/lang\/([a-z]{2}_[a-z]{2})\.json$/i);
-    if (fromPathMatch?.[1]) {
-      return fromPathMatch[1].toLowerCase();
-    }
-
-    const fromNameMatch = file.name.toLowerCase().match(/^([a-z]{2}_[a-z]{2})\.json$/);
-    if (fromNameMatch?.[1]) {
-      return fromNameMatch[1].toLowerCase();
-    }
-
-    return 'unknown';
-  }
-
-  private async parseItemTags(
-    files: File[],
-    registry: { namespace?: string },
-  ): Promise<ItemTagModel[]> {
-    const parsedTags: ItemTagModel[] = [];
-
-    for (const file of files) {
-      try {
-        const text = await file.text();
-        const payload = JSON.parse(text) as { values?: unknown };
-        const values = Array.isArray(payload.values)
-          ? payload.values
-              .filter((value): value is string => typeof value === 'string')
-              .map((value) => this.normalizeTagValue(value))
-              .filter((value) => !!value)
-          : [];
-
-        if (!values.length) {
-          continue;
-        }
-
-        const tagId = this.resolveItemTagId(file, registry.namespace);
-        if (!tagId) {
-          continue;
-        }
-
-        parsedTags.push({
-          tagId,
-          values: Array.from(new Set(values)),
-        });
-      } catch (error) {
-        console.warn('Arquivo de tag invalido ignorado:', file.name, error);
-      }
-    }
-
-    return parsedTags;
-  }
-
-  private resolveItemTagId(file: File, fallbackNamespace?: string): string {
-    const relativePath = this.getFileRelativePath(file);
-    const withoutExtension = relativePath.replace(/\.json$/i, '');
-    const rawSegments = withoutExtension
-      .split(/[\\/]+/)
-      .map((segment) => segment.trim())
-      .filter((segment) => !!segment);
-
-    if (!rawSegments.length) {
-      return '';
-    }
-
-    const segments = rawSegments.map((segment) => this.normalizeTagPath(segment));
-    const tagsIndex = segments.findIndex((segment) => segment === 'tags');
-    const itemsIndex = tagsIndex >= 0 && segments[tagsIndex + 1] === 'items' ? tagsIndex + 1 : -1;
-
-    if (itemsIndex > 0) {
-      const namespace = segments[tagsIndex - 1] || fallbackNamespace || 'minecraft';
-      const tagPath = segments.slice(itemsIndex + 1).join('/');
-      return this.normalizeTagPath(`${namespace}:${tagPath}`);
-    }
-
-    if (segments.length >= 2) {
-      const namespace = segments[0] || fallbackNamespace || 'minecraft';
-      const tagPath = segments.slice(1).join('/');
-      return this.normalizeTagPath(`${namespace}:${tagPath}`);
-    }
-
-    const namespace = fallbackNamespace || 'minecraft';
-    return this.normalizeTagPath(`${namespace}:${segments[0]}`);
-  }
-
-  private getFileRelativePath(file: File): string {
-    const candidate = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
-    return (candidate || file.name).replace(/\\/g, '/');
-  }
-
-  private mergeItemTags(existingTags: ItemTagModel[], newTags: ItemTagModel[]): ItemTagModel[] {
-    const mergedById = new Map<string, ItemTagModel>();
-
-    for (const tag of existingTags) {
-      const key = this.normalizeTagPath(tag.tagId ?? '');
-      if (!key) {
-        continue;
-      }
-
-      mergedById.set(key, {
-        tagId: key,
-        values: tag.values ? [...tag.values] : [],
-      });
-    }
-
-    for (const tag of newTags) {
-      const key = this.normalizeTagPath(tag.tagId ?? '');
-      if (!key) {
-        continue;
-      }
-
-      mergedById.set(key, {
-        tagId: key,
-        values: tag.values ? [...tag.values] : [],
-      });
-    }
-
-    return Array.from(mergedById.values()).sort((left, right) =>
-      (left.tagId ?? '').localeCompare(right.tagId ?? ''),
-    );
-  }
-
-  private mergeItemLangs(existingLangs: LangModel[], newLangs: LangModel[]): LangModel[] {
-    const mergedByLocale = new Map<string, LangModel>();
-
-    for (const lang of existingLangs) {
-      const locale = (lang.locale ?? '').trim().toLowerCase();
-      if (!locale) {
-        continue;
-      }
-
-      mergedByLocale.set(locale, {
-        locale,
-        values: lang.values ? { ...lang.values } : {},
-      });
-    }
-
-    for (const lang of newLangs) {
-      const locale = (lang.locale ?? '').trim().toLowerCase();
-      if (!locale) {
-        continue;
-      }
-
-      const current = mergedByLocale.get(locale);
-      mergedByLocale.set(locale, {
-        locale,
-        values: {
-          ...(current?.values ?? {}),
-          ...(lang.values ?? {}),
-        },
-      });
-    }
-
-    return Array.from(mergedByLocale.values()).sort((left, right) =>
-      (left.locale ?? '').localeCompare(right.locale ?? ''),
-    );
   }
 
   private updateImportSession(
@@ -727,7 +812,7 @@ export class Registry {
       return undefined;
     }
 
-    const cacheKey = this.normalizeKey(texture.itemId ?? texture.itemName);
+    const cacheKey = normalizeKey(texture.itemId ?? texture.itemName);
     const cachedUrl = this.textureObjectUrls.get(cacheKey);
     if (cachedUrl) {
       return cachedUrl;
@@ -743,7 +828,7 @@ export class Registry {
       return undefined;
     }
 
-    const cacheKey = this.normalizeKey(texture.itemId ?? texture.itemName);
+    const cacheKey = normalizeKey(texture.itemId ?? texture.itemName);
     const cachedUrl = this.textureObjectUrls.get(cacheKey);
     if (cachedUrl) {
       return cachedUrl;
@@ -782,11 +867,11 @@ export class Registry {
 
   private findTextureForItem(item: ItemModel): ItemTextureModel | undefined {
     const candidateKeys = [item.id, item.name, item.icon, item.iconId]
-      .map((value) => this.normalizeKey(value))
+      .map((value) => normalizeKey(value))
       .filter((value) => !!value);
 
     return this.itemTextures().find((texture) => {
-      const textureKey = this.normalizeKey(texture.itemId ?? texture.itemName);
+      const textureKey = normalizeKey(texture.itemId ?? texture.itemName);
       return candidateKeys.includes(textureKey);
     });
   }
@@ -801,10 +886,5 @@ export class Registry {
   private pickRandomTextures(textures: ItemTextureModel[], quantity: number): ItemTextureModel[] {
     const shuffled = [...textures].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, quantity);
-  }
-
-  private async fileToBlob(file: File): Promise<Blob> {
-    const content = await file.arrayBuffer();
-    return new Blob([content], { type: file.type });
   }
 }

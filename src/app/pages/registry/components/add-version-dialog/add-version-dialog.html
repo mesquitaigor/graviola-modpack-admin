@@ -1,0 +1,50 @@
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium text-slate-700" for="av-version">
+      Versão do mod
+    </label>
+    <input
+      id="av-version"
+      pInputText
+      type="text"
+      placeholder="Ex: 0.5.1"
+      [(ngModel)]="value"
+      class="font-mono w-full"
+    />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium text-slate-700" for="av-mc-version">
+      Versão do Minecraft
+    </label>
+    <p-select
+      inputId="av-mc-version"
+      [options]="minecraftVersions"
+      [(ngModel)]="mcVersion"
+      optionLabel="label"
+      optionValue="value"
+      optionDisabled="disabled"
+      placeholder="Selecione uma versão"
+      [filter]="true"
+      filterPlaceholder="Buscar versão"
+      appendTo="body"
+      [style]="{ width: '100%' }"
+    />
+  </div>
+</div>
+
+<div class="flex justify-end gap-2 mt-5">
+  <p-button
+    label="Cancelar"
+    severity="secondary"
+    [outlined]="true"
+    (onClick)="cancel()"
+  />
+  <p-button
+    label="Adicionar"
+    icon="pi pi-check"
+    [disabled]="!value.trim() || !mcVersion.trim() || submitting()"
+    [loading]="submitting()"
+    (onClick)="submit()"
+  />
+</div>

@@ -1,0 +1,45 @@
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium text-slate-700" for="er-name">
+      Nome
+    </label>
+    <input
+      id="er-name"
+      pInputText
+      type="text"
+      placeholder="Nome do mod"
+      [(ngModel)]="name"
+      class="w-full"
+    />
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium text-slate-700" for="er-namespace">
+      Namespace
+    </label>
+    <input
+      id="er-namespace"
+      pInputText
+      type="text"
+      placeholder="Ex: mymod"
+      [(ngModel)]="namespace"
+      class="font-mono w-full"
+    />
+  </div>
+</div>
+
+<div class="flex justify-end gap-2 mt-5">
+  <p-button
+    label="Cancelar"
+    severity="secondary"
+    [outlined]="true"
+    (onClick)="cancel()"
+  />
+  <p-button
+    label="Salvar"
+    icon="pi pi-check"
+    [disabled]="!name.trim() || submitting()"
+    [loading]="submitting()"
+    (onClick)="submit()"
+  />
+</div>

@@ -5,22 +5,105 @@
   [draggable]="false"
   [resizable]="false"
   header="Adicionar item"
+  [style]="{ width: '24rem' }"
 >
-  <div class="space-y-4">
-    <label for="itemId">ID do item</label>
-    <input
-      id="itemId"
-      pInputText
-      placeholder="Digite o ID do item"
-      class="w-full"
-    />
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1.5">
+      <div class="flex items-center justify-between gap-2">
+        <label class="text-sm font-medium text-slate-700" for="ai-id">ID do item</label>
+        <button
+          type="button"
+          class="text-xs text-emerald-700 hover:underline cursor-pointer"
+          (click)="requestImportTags()"
+        >
+          Importar tags
+        </button>
+      </div>
+      <p-autoComplete
+        #idAutoComplete
+        inputId="ai-id"
+        [(ngModel)]="id"
+        [suggestions]="filteredIdSuggestions()"
+        (completeMethod)="searchId($event)"
+        (onFocus)="idAutoComplete.show()"
+        [dropdown]="true"
+        [forceSelection]="false"
+        appendTo="body"
+        placeholder="Ex: minecraft:diamond_sword"
+        inputStyleClass="font-mono w-full"
+        styleClass="w-full"
+        panelStyleClass="max-w-xs"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <div class="flex items-center justify-between gap-2">
+        <label class="text-sm font-medium text-slate-700" for="ai-name">Nome (opcional)</label>
+        <button
+          type="button"
+          class="text-xs text-emerald-700 hover:underline cursor-pointer"
+          (click)="requestImportLang()"
+        >
+          Importar lang
+        </button>
+      </div>
+      <p-autoComplete
+        #nameAutoComplete
+        inputId="ai-name"
+        [(ngModel)]="name"
+        [suggestions]="filteredNameSuggestions()"
+        (completeMethod)="searchName($event)"
+        (onFocus)="nameAutoComplete.show()"
+        [dropdown]="true"
+        [forceSelection]="false"
+        appendTo="body"
+        placeholder="Ex: Espada de Diamante"
+        inputStyleClass="w-full"
+        styleClass="w-full"
+        panelStyleClass="max-w-xs"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium text-slate-700" for="ai-icon">Ícone PNG (opcional)</label>
+      <input
+        id="ai-icon"
+        type="file"
+        accept="image/png,.png"
+        class="block w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+        (change)="onIconSelected($event)"
+      />
+      @if (iconDataUrl(); as preview) {
+        <div class="flex items-center gap-2 mt-1">
+          <img
+            [src]="preview"
+            alt="Pré-visualização do ícone"
+            class="w-8 h-8 rounded border border-slate-200 bg-white object-contain"
+          />
+          <button
+            type="button"
+            class="text-xs text-red-600 hover:underline cursor-pointer"
+            (click)="clearIcon()"
+          >
+            Remover ícone
+          </button>
+        </div>
+      }
+    </div>
   </div>
-  <div class="flex items-center justify-end gap-3 mt-4">
+
+  <div class="flex justify-end gap-2 mt-5">
     <p-button
-      severity="secondary"
-      (click)="visibleChange.emit(false)"
       label="Cancelar"
-    ></p-button>
-    <p-button label="Adicionar"></p-button>
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="cancel()"
+    />
+    <p-button
+      label="Adicionar"
+      icon="pi pi-check"
+      [disabled]="!id.trim()"
+      (onClick)="submit()"
+    />
   </div>
 </p-dialog>

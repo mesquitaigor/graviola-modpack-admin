@@ -1,72 +1,164 @@
 <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 py-16">
   <div class="w-full max-w-2xl">
-    <div class="mb-12 text-center">
-      <div
-        class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 mb-5"
-      >
-        <i class="pi pi-database text-2xl"></i>
+
+    @if (step() === 'select-method') {
+      <div class="mb-12 text-center">
+        <div
+          class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 mb-5"
+        >
+          <i class="pi pi-database text-2xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-800">Adicionar registro</h1>
+        <p class="text-slate-500 mt-2 text-base">
+          Escolha como deseja adicionar um novo registro de mod.
+        </p>
       </div>
-      <h1 class="text-3xl font-bold text-slate-800">Adicionar registro</h1>
-      <p class="text-slate-500 mt-2 text-base">
-        Escolha como deseja adicionar um novo registro de mod.
-      </p>
-    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <button
-        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
-        (click)="selectMethod('manual')"
-      >
-        <div
-          class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors"
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <button
+          class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+          (click)="selectMethod('manual')"
         >
-          <i class="pi pi-pencil text-xl"></i>
-        </div>
-        <div>
-          <p class="font-semibold text-slate-800 text-sm text-center">Manual</p>
-          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
-            Preencha os dados do mod manualmente.
-          </p>
-        </div>
-      </button>
+          <div
+            class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors"
+          >
+            <i class="pi pi-pencil text-xl"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 text-sm text-center">Manual</p>
+            <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+              Preencha os dados do mod manualmente.
+            </p>
+          </div>
+        </button>
 
-      <button
-        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
-        (click)="selectMethod('jar')"
-      >
-        <div
-          class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+        <button
+          class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+          (click)="selectMethod('jar')"
         >
-          <i class="pi pi-file text-xl"></i>
-        </div>
-        <div>
-          <p class="font-semibold text-slate-800 text-sm text-center">
-            Importar .jar
-          </p>
-          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
-            Extraia os dados diretamente do arquivo do mod.
-          </p>
-        </div>
-      </button>
+          <div
+            class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+          >
+            <i class="pi pi-file text-xl"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 text-sm text-center">
+              Importar .jar
+            </p>
+            <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+              Extraia os dados diretamente do arquivo do mod.
+            </p>
+          </div>
+        </button>
 
-      <button
-        class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
-        (click)="selectMethod('json')"
-      >
-        <div
-          class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+        <button
+          class="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer text-left"
+          (click)="selectMethod('json')"
         >
-          <i class="pi pi-file-export text-xl"></i>
+          <div
+            class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"
+          >
+            <i class="pi pi-file-export text-xl"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 text-sm text-center">
+              Importar .json
+            </p>
+            <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
+              Importe um arquivo JSON com os dados do registro.
+            </p>
+          </div>
+        </button>
+      </div>
+    }
+
+    @if (step() === 'manual-form') {
+      <div class="mb-10">
+        <button
+          class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-8 cursor-pointer"
+          (click)="back()"
+        >
+          <i class="pi pi-arrow-left text-xs"></i>
+          Voltar
+        </button>
+
+        <div class="text-center">
+          <div
+            class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 mb-5"
+          >
+            <i class="pi pi-pencil text-2xl"></i>
+          </div>
+          <h1 class="text-3xl font-bold text-slate-800">Novo registro</h1>
+          <p class="text-slate-500 mt-2 text-base">Preencha os dados básicos do registro.</p>
         </div>
-        <div>
-          <p class="font-semibold text-slate-800 text-sm text-center">
-            Importar .json
-          </p>
-          <p class="text-xs text-slate-500 mt-1 text-center leading-relaxed">
-            Importe um arquivo JSON com os dados do registro.
-          </p>
+      </div>
+
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        class="bg-white rounded-2xl border border-slate-200 p-8 flex flex-col gap-6"
+      >
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700" for="reg-name">
+            Nome
+          </label>
+          <input
+            id="reg-name"
+            type="text"
+            formControlName="name"
+            placeholder="Ex: Create Mod"
+            class="w-full rounded-xl border px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors
+              focus:ring-2 focus:ring-emerald-400 focus:border-transparent
+              [&.ng-invalid.ng-touched]:border-red-400 [&.ng-valid]:border-slate-200 border-slate-200"
+          />
+          @if (form.controls.name.invalid && form.controls.name.touched) {
+            <p class="text-xs text-red-500 mt-0.5">
+              @if (form.controls.name.hasError('required')) { Nome é obrigatório. }
+              @else if (form.controls.name.hasError('minlength')) { Mínimo de 2 caracteres. }
+            </p>
+          }
         </div>
-      </button>
-    </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700" for="reg-namespace">
+            Namespace
+          </label>
+          <input
+            id="reg-namespace"
+            type="text"
+            formControlName="namespace"
+            placeholder="Ex: create"
+            class="w-full rounded-xl border px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors font-mono
+              focus:ring-2 focus:ring-emerald-400 focus:border-transparent
+              [&.ng-invalid.ng-touched]:border-red-400 [&.ng-valid]:border-slate-200 border-slate-200"
+          />
+          <p class="text-xs text-slate-400">Apenas letras minúsculas, números e underscores.</p>
+          @if (form.controls.namespace.invalid && form.controls.namespace.touched) {
+            <p class="text-xs text-red-500 mt-0.5">
+              @if (form.controls.namespace.hasError('required')) { Namespace é obrigatório. }
+              @else if (form.controls.namespace.hasError('pattern')) { Use apenas letras minúsculas, números e underscores. }
+            </p>
+          }
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button
+            type="submit"
+            [disabled]="form.invalid || saving()"
+            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-semibold
+              hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            @if (saving()) {
+              <i class="pi pi-spin pi-spinner text-sm"></i>
+              Criando...
+            } @else {
+              <i class="pi pi-check text-sm"></i>
+              Criar registro
+            }
+          </button>
+        </div>
+      </form>
+    }
+
   </div>
 </div>

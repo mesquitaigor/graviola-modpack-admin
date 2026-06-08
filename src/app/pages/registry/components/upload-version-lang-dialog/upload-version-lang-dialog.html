@@ -1,0 +1,40 @@
+<div class="space-y-4">
+  <div>
+    <label
+      for="version-lang-files"
+      class="block text-sm font-medium text-slate-700 mb-2"
+    >
+      Selecione os arquivos JSON de lang
+    </label>
+    <input
+      id="version-lang-files"
+      type="file"
+      multiple
+      accept=".json,application/json"
+      class="block w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+      (change)="onFilesSelected($event)"
+    />
+    <p class="text-xs text-slate-400 mt-2">
+      Exemplo esperado: assets/modid/lang/pt_br.json com chaves de traducao.
+    </p>
+  </div>
+
+  @if (files().length) {
+    <p class="text-xs text-slate-600">{{ files().length }} arquivo(s) selecionado(s).</p>
+  }
+</div>
+
+<div class="flex justify-end gap-2 mt-5">
+  <p-button
+    label="Cancelar"
+    severity="secondary"
+    [outlined]="true"
+    (onClick)="cancel()"
+  />
+  <p-button
+    label="Importar"
+    icon="pi pi-check"
+    [disabled]="!files().length"
+    (onClick)="submit()"
+  />
+</div>

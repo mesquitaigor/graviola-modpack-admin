@@ -51,6 +51,21 @@
         "--style=none"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "gen: generate model",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/scripts/new-model.ps1",
+        "-ModelName",
+        "${input:modelName}"
+      ],
+      "problemMatcher": []
     }
   ],
   "inputs": [
@@ -59,6 +74,12 @@
       "type": "promptString",
       "description": "Nome do componente dentro de src/app/pages (ex: user-list)",
       "default": "new-component"
+    },
+    {
+      "id": "modelName",
+      "type": "promptString",
+      "description": "Nome do model dentro de src/app/models (ex: lang-file)",
+      "default": "new-model"
     }
   ]
 }

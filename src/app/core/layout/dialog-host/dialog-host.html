@@ -1,0 +1,13 @@
+@for (dialog of stack(); track dialog.ref) {
+  <p-dialog
+    [visible]="true"
+    (visibleChange)="onVisibleChange(dialog, $event)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [header]="dialog.config.header ?? ''"
+    [style]="dialog.config.width ? { width: dialog.config.width } : undefined"
+  >
+    <ng-container *ngComponentOutlet="dialog.component; injector: dialog.injector" />
+  </p-dialog>
+}

@@ -2,6 +2,7 @@ import type { ItemData } from '../item/item.data';
 import type LangData from '../lang/lang.data';
 import type ItemTagData from '../item-tag/item-tag.data';
 import type ItemTextureData from '../item-texture/item-texture.data';
+import type { VersionData } from '../version/version.data';
 
 export default interface RegistryData {
   items?: ItemData[];
@@ -9,21 +10,11 @@ export default interface RegistryData {
   itemTags?: ItemTagData[];
 
   id?: string;
-  version?: string;
   namespace?: string;
   name?: string;
   langs?: LangData[];
-
-  mcVersion?: string;
+  versions?: VersionData[];
   createdAt?: string;
   updatedAt?: string;
   modId?: string;
-  entries?: {
-    items?: [
-      {
-        id: string;
-        name: string;
-      },
-    ];
-  };
 }

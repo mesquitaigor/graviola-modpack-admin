@@ -62,9 +62,7 @@ export class RegistryService {
 
   private loadAll(): Observable<void> {
     return this.registryDb.getAll().pipe(
-      map((registriesData) =>
-        registriesData.map((data) => RegistryMapper.toModel(data)),
-      ),
+      map((registriesData) => registriesData.map((data) => RegistryMapper.toModel(data))),
       tap((registries) => {
         this.registries.next(registries);
         this.loaded.next(true);
@@ -82,27 +80,12 @@ export class RegistryService {
   }
 
   add(registry: Omit<RegistryModel, 'id'>): Observable<void> {
-    const now = new Date();
-    const id = crypto.randomUUID();
-    const modId = registry.namespace
-      ? registry.namespace.toLowerCase().replace(/[^a-z0-9_]/g, '_')
-      : crypto.randomUUID();
-    const data = RegistryMapper.toData({
-      ...registry,
-      id,
-      modId: registry.modId ?? modId,
-      createdAt: registry.createdAt ?? now,
-    } as RegistryModel);
+    const data = RegistryMapper.toCreateData(registry);
     return this.registryDb.add(data).pipe(switchMap(() => this.loadAll()));
   }
 
-  update(
-    id: string,
-    changes: Partial<Omit<RegistryModel, 'id'>>,
-  ): Observable<void> {
-    const { id: _, ...changesData } = RegistryMapper.toData(
-      changes as RegistryModel,
-    );
+  update(id: string, changes: Partial<Omit<RegistryModel, 'id'>>): Observable<void> {
+    const { id: _, ...changesData } = RegistryMapper.toData(changes as RegistryModel);
     const existing = this.getById(id);
 
     if (!existing) {
@@ -121,9 +104,7 @@ export class RegistryService {
             this.registries
               .getValue()
               .map((registry) =>
-                registry.id === id
-                  ? { ...registry, ...changes, updatedAt: new Date() }
-                  : registry,
+                registry.id === id ? { ...registry, ...changes, updatedAt: new Date() } : registry,
               ),
           );
         }),
@@ -134,17 +115,13 @@ export class RegistryService {
   remove(id: string): Observable<void> {
     return this.registryDb.delete(id).pipe(
       tap(() => {
-        this.registries.next(
-          this.registries.getValue().filter((registry) => registry.id !== id),
-        );
+        this.registries.next(this.registries.getValue().filter((registry) => registry.id !== id));
       }),
       map(() => void 0),
     );
   }
 
-  private loadEmbeddedIcons(
-    registry: RegistryModel,
-  ): Observable<Omit<RegistryModel, 'id'>> {
+  private loadEmbeddedIcons(registry: RegistryModel): Observable<Omit<RegistryModel, 'id'>> {
     return from(registry.items ?? []).pipe(
       mergeMap((item) => from(item.loadEmbeddedIcon()).pipe(map(() => item))),
       toArray(),
