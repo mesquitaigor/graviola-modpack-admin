@@ -25,3 +25,30 @@ export function isJsonFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return name.endsWith('.json') || file.type === 'application/json';
 }
+
+export async function collectFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
+  if (entry.isFile) {
+    return new Promise<File[]>((resolve) => {
+      (entry as FileSystemFileEntry).file(
+        (file) => resolve([file]),
+        () => resolve([]),
+      );
+    });
+  }
+
+  if (entry.isDirectory) {
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    const allEntries: FileSystemEntry[] = [];
+    let batch: FileSystemEntry[];
+    do {
+      batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
+        reader.readEntries(resolve, reject),
+      );
+      allEntries.push(...batch);
+    } while (batch.length > 0);
+    const nested = await Promise.all(allEntries.map(collectFilesFromEntry));
+    return nested.flat();
+  }
+
+  return [];
+}

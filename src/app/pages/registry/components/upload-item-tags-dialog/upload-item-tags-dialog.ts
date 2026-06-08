@@ -1,9 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { DIALOG_DATA, DialogRef } from '../../../../core/services/dialog.model';
 import { RegistryService } from '../../../../models/registry/registry.service';
-import { isJsonFile } from '../../helpers/file.helper';
+import { collectFilesFromEntry, isJsonFile } from '../../helpers/file.helper';
 import { normalizeTagPath } from '../../helpers/text-normalize.helper';
 import { mergeItemTags, parseItemTags } from '../../helpers/item-tag-import.helper';
 
@@ -32,7 +32,10 @@ export class UploadItemTagsDialogComponent {
     this.registries().find((r) => r.id === this.data.registryId),
   );
 
+  @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
+
   protected readonly step = signal<'upload' | 'review'>('upload');
+  protected readonly isDragOver = signal(false);
   protected readonly removedTagIds = signal<Set<string>>(new Set());
   protected readonly rawItems = signal<Omit<TagReviewItem, 'removed'>[]>([]);
   protected readonly displayItems = computed<TagReviewItem[]>(() => {
@@ -40,11 +43,48 @@ export class UploadItemTagsDialogComponent {
     return this.rawItems().map((item) => ({ ...item, removed: removed.has(item.tagId) }));
   });
 
+  protected onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(true);
+  }
+
+  protected onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    const container = event.currentTarget as HTMLElement;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (!container.contains(relatedTarget)) {
+      this.isDragOver.set(false);
+    }
+  }
+
+  protected async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.isDragOver.set(false);
+
+    const items = Array.from(event.dataTransfer?.items ?? []);
+    const entries = items
+      .map((item) => item.webkitGetAsEntry())
+      .filter((entry): entry is FileSystemEntry => entry !== null);
+
+    const allFiles = (await Promise.all(entries.map(collectFilesFromEntry))).flat();
+    const jsonFiles = allFiles.filter(isJsonFile);
+
+    await this.processFiles(jsonFiles);
+  }
+
   protected async onFilesSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []).filter((f) => isJsonFile(f));
     input.value = '';
+    await this.processFiles(files);
+  }
 
+  protected openFilePicker(): void {
+    this.fileInputRef.nativeElement.click();
+  }
+
+  private async processFiles(files: File[]): Promise<void> {
     if (!files.length) return;
 
     const currentRegistry = this.registry();
