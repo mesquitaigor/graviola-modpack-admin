@@ -3,19 +3,15 @@ import { Injectable, signal, type Signal, type WritableSignal } from '@angular/c
 export type RegistryDialogKey =
   | 'addItem'
   | 'uploadTextures'
-  | 'uploadItemTags'
   | 'uploadItemLang'
   | 'textureImportReview'
-  | 'itemTagImportReview'
   | 'allTextures';
 
 const DIALOG_KEYS: RegistryDialogKey[] = [
   'addItem',
   'uploadTextures',
-  'uploadItemTags',
   'uploadItemLang',
   'textureImportReview',
-  'itemTagImportReview',
   'allTextures',
 ];
 

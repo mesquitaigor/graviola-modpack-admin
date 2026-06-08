@@ -6,6 +6,8 @@ import { AutoCompleteModule, type AutoCompleteCompleteEvent } from 'primeng/auto
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { RegistryService } from '../../../../models/registry/registry.service';
+import { DialogService } from '../../../../core/services/dialog.service';
+import { UploadItemTagsDialogComponent } from '../upload-item-tags-dialog/upload-item-tags-dialog';
 import ItemModel from '../../../../models/item/item.model';
 
 @Component({
@@ -15,6 +17,7 @@ import ItemModel from '../../../../models/item/item.model';
 })
 export class AddItemDialogComponent {
   private readonly registryService = inject(RegistryService);
+  private readonly dialogService = inject(DialogService);
   private readonly registries = toSignal(this.registryService.registries$, { initialValue: [] });
   private readonly registry = computed(() =>
     this.registries().find((r) => r.id === this.registryId()),
@@ -28,7 +31,6 @@ export class AddItemDialogComponent {
   public registryId = input<string>('');
   public selectedVersionIndex = input<number>(0);
   public visibleChange = output<boolean>();
-  public importTagsRequest = output<void>();
   public importLangRequest = output<void>();
 
   protected id = '';
@@ -58,7 +60,11 @@ export class AddItemDialogComponent {
   }
 
   protected requestImportTags(): void {
-    this.importTagsRequest.emit();
+    this.dialogService.open(UploadItemTagsDialogComponent, {
+      header: 'Carregar tags de itens',
+      width: 'min(96vw, 42rem)',
+      data: { registryId: this.registryId() },
+    });
   }
 
   protected requestImportLang(): void {

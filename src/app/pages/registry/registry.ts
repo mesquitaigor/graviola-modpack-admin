@@ -4,15 +4,13 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import ItemModel from '../../models/item/item.model';
-import ItemTagModel from '../../models/item-tag/item-tag.model';
 import ItemTextureModel from '../../models/item-texture/item-texture.model';
 import { RegistryService } from '../../models/registry/registry.service';
 import { UploadItemLangDialogComponent } from './components/upload-item-lang-dialog/upload-item-lang-dialog';
-import { UploadItemTagsDialogComponent } from './components/upload-item-tags-dialog/upload-item-tags-dialog';
 import {
-  type ItemTagImportReviewItem,
-  ItemTagsImportReviewDialogComponent,
-} from './components/item-tags-import-review-dialog/item-tags-import-review-dialog';
+  UploadItemTagsDialogComponent,
+  type UploadItemTagsDialogData,
+} from './components/upload-item-tags-dialog/upload-item-tags-dialog';
 import { UploadTexturesDialogComponent } from './components/upload-textures-dialog/upload-textures-dialog';
 import { TexturesGalleryDialogComponent } from './components/textures-gallery-dialog/textures-gallery-dialog';
 import {
@@ -37,8 +35,7 @@ import { DeleteRegistryDialogComponent } from './components/delete-registry-dial
 import type { DeleteRegistryDialogData } from './components/delete-registry-dialog/delete-registry-dialog';
 import { UploadVersionLangDialogComponent } from './components/upload-version-lang-dialog/upload-version-lang-dialog';
 import { fileBaseName, fileToBlob, isImageFile, isJsonFile } from './helpers/file.helper';
-import { normalizeKey, normalizeTagPath } from './helpers/text-normalize.helper';
-import { mergeItemTags, parseItemTags } from './helpers/item-tag-import.helper';
+import { normalizeKey } from './helpers/text-normalize.helper';
 import {
   filterLangsByKeyPrefix,
   mergeItemLangs,
@@ -74,8 +71,6 @@ interface RegistryImportSession {
     ToastModule,
     AddItemDialogComponent,
     UploadItemLangDialogComponent,
-    UploadItemTagsDialogComponent,
-    ItemTagsImportReviewDialogComponent,
     UploadTexturesDialogComponent,
     TexturesGalleryDialogComponent,
     TexturesImportReviewDialogComponent,
@@ -147,11 +142,8 @@ export class Registry {
   public readonly itemTextures = computed(() => this.registry()?.itemTextures ?? []);
   public readonly texturePreview = signal<ItemTextureModel[]>([]);
   public readonly pendingTextureImports = signal<TextureImportReviewItem[]>([]);
-  public readonly pendingItemTagImports = signal<ItemTagImportReviewItem[]>([]);
   public readonly itemLangImportInProgress = signal(false);
   public readonly itemLangImportSummary = signal('');
-  public readonly itemTagsImportInProgress = signal(false);
-  public readonly itemTagsImportSummary = signal('');
   public readonly uploadInProgress = signal(false);
   public readonly uploadSummary = signal('');
   public readonly importSession = signal<RegistryImportSession>({
@@ -395,108 +387,6 @@ export class Registry {
     }
   }
 
-  public async uploadItemTags(files: File[]): Promise<void> {
-    const currentRegistry = this.registry();
-    this.updateImportSession('tags', {
-      selectedFiles: files.length,
-    });
-
-    if (!currentRegistry?.id) {
-      this.itemTagsImportSummary.set('Registro nao encontrado para salvar tags.');
-      return;
-    }
-
-    if (!files.length) {
-      this.itemTagsImportSummary.set('Nenhum arquivo JSON selecionado.');
-      return;
-    }
-
-    this.itemTagsImportInProgress.set(true);
-
-    try {
-      const tagFiles = files.filter((file) => isJsonFile(file));
-      if (!tagFiles.length) {
-        this.itemTagsImportSummary.set('Nenhum arquivo de tag valido foi encontrado.');
-        return;
-      }
-
-      const parsedTags = await parseItemTags(tagFiles, currentRegistry.namespace);
-      if (!parsedTags.length) {
-        this.itemTagsImportSummary.set('Nenhuma tag valida foi encontrada nos JSONs.');
-        return;
-      }
-
-      const existingTagIds = new Set(
-        (currentRegistry.itemTags ?? [])
-          .map((tag) => normalizeTagPath(tag.tagId ?? ''))
-          .filter((tagId) => !!tagId),
-      );
-
-      const reviewItems: ItemTagImportReviewItem[] = parsedTags.map((tag) => ({
-        tagId: tag.tagId ?? '',
-        values: tag.values ?? [],
-        alreadyExists: existingTagIds.has(normalizeTagPath(tag.tagId ?? '')),
-      }));
-
-      this.pendingItemTagImports.set(reviewItems);
-      this.dialogs.closeAndOpen('uploadItemTags', 'itemTagImportReview');
-    } catch (e) {
-      console.error(e);
-      this.itemTagsImportSummary.set('Erro ao importar tags de itens.');
-    } finally {
-      this.itemTagsImportInProgress.set(false);
-    }
-  }
-
-  public cancelItemTagImport(): void {
-    this.pendingItemTagImports.set([]);
-    this.dialogs.close('itemTagImportReview');
-  }
-
-  public async confirmItemTagImport(items: ItemTagImportReviewItem[]): Promise<void> {
-    const currentRegistry = this.registry();
-    if (!currentRegistry?.id) {
-      this.itemTagsImportSummary.set('Registro nao encontrado para salvar tags.');
-      return;
-    }
-
-    if (!items.length) {
-      this.cancelItemTagImport();
-      return;
-    }
-
-    this.itemTagsImportInProgress.set(true);
-
-    try {
-      const newTags: ItemTagModel[] = items.map((item) => ({
-        tagId: item.tagId,
-        values: [...item.values],
-      }));
-
-      const mergedItemTags = mergeItemTags(currentRegistry.itemTags ?? [], newTags);
-
-      await firstValueFrom(
-        this.registryService.update(currentRegistry.id, {
-          itemTags: mergedItemTags,
-        }),
-      );
-
-      this.pendingItemTagImports.set([]);
-      this.dialogs.close('itemTagImportReview');
-      this.itemTagsImportSummary.set(
-        `${newTags.length} tag(s) de item importada(s) com sucesso.`,
-      );
-      this.updateImportSession('tags', {
-        importedEntries: newTags.length,
-      });
-    } catch (e) {
-      console.error(e);
-      this.itemTagsImportSummary.set('Erro ao importar tags de itens.');
-    } finally {
-      this.itemTagsImportInProgress.set(false);
-    }
-  }
-
   public async uploadItemLang(files: File[]): Promise<void> {
     const currentRegistry = this.registry();
     this.updateImportSession('lang', {
@@ -557,6 +447,16 @@ export class Registry {
     }
   }
 
+  public openUploadItemTagsDialog(): void {
+    const id = this.registry()?.id;
+    if (!id) return;
+    this.dialogService.open<void, UploadItemTagsDialogData>(UploadItemTagsDialogComponent, {
+      header: 'Carregar tags de itens',
+      width: 'min(96vw, 42rem)',
+      data: { registryId: id },
+    });
+  }
+
   public openUploadVersionLangDialog(): void {
     const ref = this.dialogService.open<File[]>(UploadVersionLangDialogComponent, {
       header: 'Carregar arquivos de lang',
@@ -585,7 +485,8 @@ export class Registry {
         this.messageService.add({
           severity: 'warn',
           summary: 'Nenhuma tradução importada',
-          detail: 'Nenhuma traducao de item (prefixo "item.") foi encontrada nos JSONs selecionados.',
+          detail:
+            'Nenhuma traducao de item (prefixo "item.") foi encontrada nos JSONs selecionados.',
         });
         return;
       }

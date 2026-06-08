@@ -1,12 +1,4 @@
-<p-dialog
-  [visible]="visible"
-  (visibleChange)="visibleChange.emit($event)"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: 'min(96vw, 42rem)' }"
-  header="Carregar tags de itens"
->
+@if (step() === 'upload') {
   <div class="space-y-4">
     <div>
       <label
@@ -28,12 +20,95 @@
         Os arquivos JSON devem conter o campo values com os ids dos itens.
       </p>
     </div>
-
-    @if (importInProgress) {
-      <p class="text-xs text-slate-500">Importando tags de itens...</p>
-    }
-    @if (importSummary) {
-      <p class="text-xs text-slate-600">{{ importSummary }}</p>
-    }
   </div>
-</p-dialog>
+} @else {
+  <div class="space-y-4">
+    <p class="text-sm text-slate-500">
+      Remova as tags que nao devem ser importadas antes de confirmar.
+    </p>
+
+    <div class="max-h-[55dvh] overflow-y-auto rounded-lg border border-slate-200">
+      @for (item of displayItems(); track item.tagId) {
+        <div
+          class="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-3 last:border-b-0"
+          [class]="item.removed ? 'bg-slate-50 opacity-60' : 'bg-white'"
+        >
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-medium font-mono text-slate-800 truncate">
+                {{ item.tagId }}
+              </p>
+              @if (item.removed) {
+                <span
+                  class="inline-flex flex-none rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+                >
+                  Removido
+                </span>
+              } @else if (item.alreadyExists) {
+                <span
+                  class="inline-flex flex-none rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800"
+                >
+                  Ja existe
+                </span>
+              } @else {
+                <span
+                  class="inline-flex flex-none rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800"
+                >
+                  Nova
+                </span>
+              }
+            </div>
+            <p class="text-xs text-slate-400 truncate">{{ item.values.length }} item(ns)</p>
+          </div>
+
+          @if (item.removed) {
+            <button
+              type="button"
+              class="flex-none text-xs text-emerald-700 hover:underline cursor-pointer"
+              (click)="toggleItem(item.tagId)"
+            >
+              Adicionar
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="flex-none text-xs text-red-600 hover:underline cursor-pointer"
+              (click)="toggleItem(item.tagId)"
+            >
+              Remover
+            </button>
+          }
+        </div>
+      } @empty {
+        <p class="px-3 py-4 text-sm text-slate-400">Nenhuma tag para importar.</p>
+      }
+    </div>
+
+    <div class="flex items-center justify-between gap-2 pt-2">
+      <button
+        type="button"
+        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+        (click)="back()"
+      >
+        Voltar
+      </button>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+          (click)="cancel()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-emerald-300"
+          [disabled]="!displayItems().length"
+          (click)="confirm()"
+        >
+          Confirmar importacao
+        </button>
+      </div>
+    </div>
+  </div>
+}
