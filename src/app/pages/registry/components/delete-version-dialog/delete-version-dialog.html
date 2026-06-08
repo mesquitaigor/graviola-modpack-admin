@@ -1,0 +1,30 @@
+<div class="flex flex-col items-center gap-4 text-center py-2">
+  <div class="flex items-center justify-center w-14 h-14 rounded-full bg-red-100">
+    <i class="pi pi-trash text-red-500 text-2xl"></i>
+  </div>
+  <div class="flex flex-col gap-1.5">
+    <p class="text-slate-800">
+      Deletar a versão
+      <span class="font-semibold">v{{ versionValue }}</span>
+      <span class="text-slate-500"> (MC {{ mcVersion }})</span>?
+    </p>
+    <p class="text-sm text-slate-500">Esta ação não pode ser desfeita.</p>
+  </div>
+</div>
+
+<div class="flex justify-end gap-2 mt-6">
+  <p-button
+    label="Cancelar"
+    severity="secondary"
+    [outlined]="true"
+    [disabled]="submitting()"
+    (onClick)="cancel()"
+  />
+  <p-button
+    label="Deletar"
+    severity="danger"
+    icon="pi pi-trash"
+    [loading]="submitting()"
+    (onClick)="confirm()"
+  />
+</div>

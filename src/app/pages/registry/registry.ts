@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import ItemModel from '../../models/item/item.model';
@@ -22,8 +22,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
-import { ConfirmationService, MessageService, type MenuItem } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, type MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { AddItemDialogComponent } from './components/add-item-dialog/add-item-dialog';
 import type { ItemAddEvent } from './components/add-item-dialog/add-item-dialog';
@@ -33,6 +32,10 @@ import { SelectVersionDialogComponent } from './components/select-version-dialog
 import type { SelectVersionDialogData } from './components/select-version-dialog/select-version-dialog';
 import { EditRegistryDialogComponent } from './components/edit-registry-dialog/edit-registry-dialog';
 import type { EditRegistryDialogData } from './components/edit-registry-dialog/edit-registry-dialog';
+import { DeleteVersionDialogComponent } from './components/delete-version-dialog/delete-version-dialog';
+import type { DeleteVersionDialogData } from './components/delete-version-dialog/delete-version-dialog';
+import { DeleteRegistryDialogComponent } from './components/delete-registry-dialog/delete-registry-dialog';
+import type { DeleteRegistryDialogData } from './components/delete-registry-dialog/delete-registry-dialog';
 import { UploadVersionLangDialogComponent } from './components/upload-version-lang-dialog/upload-version-lang-dialog';
 import { fileBaseName, fileToBlob, isImageFile, isJsonFile } from './helpers/file.helper';
 import { normalizeKey, normalizeTagPath } from './helpers/text-normalize.helper';
@@ -69,7 +72,6 @@ interface RegistryImportSession {
     ButtonModule,
     InputTextModule,
     MenuModule,
-    ConfirmDialogModule,
     ToastModule,
     AddItemDialogComponent,
     UploadItemLangDialogComponent,
@@ -79,14 +81,12 @@ interface RegistryImportSession {
     TexturesGalleryDialogComponent,
     TexturesImportReviewDialogComponent,
   ],
-  providers: [ConfirmationService, MessageService, RegistryDialogsService],
+  providers: [MessageService, RegistryDialogsService],
   templateUrl: './registry.html',
 })
 export class Registry {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly registryService = inject(RegistryService);
-  private readonly confirmation = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly dialogService = inject(DialogService);
   protected readonly dialogs = inject(RegistryDialogsService);
@@ -259,37 +259,35 @@ export class Registry {
     const currentRegistry = this.registry();
     if (!version || !currentRegistry?.id) return;
 
-    const registryId = currentRegistry.id;
-    const index = this.selectedVersionIndex();
-
-    this.confirmation.confirm({
-      message: `Tem certeza que deseja deletar a versão "v${version.value}" (MC ${version.mcVersion})? Esta ação não pode ser desfeita.`,
-      header: 'Deletar versão',
-      icon: 'pi pi-trash',
-      acceptLabel: 'Deletar',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: async () => {
-        try {
-          const updatedVersions = this.versions().filter((_, i) => i !== index);
-          await firstValueFrom(
-            this.registryService.update(registryId, { versions: updatedVersions }),
-          );
-          this.selectedVersionIndex.set(Math.min(index, Math.max(0, updatedVersions.length - 1)));
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Versão deletada',
-            detail: `A versão "v${version.value}" foi removida com sucesso.`,
-          });
-        } catch (e) {
-          console.error(e);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao deletar versão',
-            detail: 'Não foi possível remover a versão. Tente novamente.',
-          });
-        }
+    const ref = this.dialogService.open<boolean, DeleteVersionDialogData>(
+      DeleteVersionDialogComponent,
+      {
+        header: 'Deletar versão',
+        width: '22rem',
+        data: {
+          registryId: currentRegistry.id,
+          version,
+          index: this.selectedVersionIndex(),
+          versions: this.versions,
+          selectedVersionIndex: this.selectedVersionIndex,
+        },
       },
+    );
+
+    ref.closed.subscribe((success) => {
+      if (success) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Versão deletada',
+          detail: `A versão "v${version.value}" foi removida com sucesso.`,
+        });
+      } else if (success === false) {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro ao deletar versão',
+          detail: 'Não foi possível remover a versão. Tente novamente.',
+        });
+      }
     });
   }
 
@@ -297,34 +295,28 @@ export class Registry {
     const currentRegistry = this.registry();
     if (!currentRegistry?.id) return;
 
-    const registryId = currentRegistry.id;
     const registryName = currentRegistry.name || 'Registro sem nome';
 
-    this.confirmation.confirm({
-      message: `Tem certeza que deseja deletar o registro "${registryName}"? Esta ação não pode ser desfeita.`,
-      header: 'Deletar registro',
-      icon: 'pi pi-trash',
-      acceptLabel: 'Deletar',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: async () => {
-        try {
-          await firstValueFrom(this.registryService.remove(registryId));
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Registro deletado',
-            detail: `O registro "${registryName}" foi removido com sucesso.`,
-          });
-          this.router.navigate(['/']);
-        } catch (e) {
-          console.error(e);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao deletar registro',
-            detail: 'Não foi possível remover o registro. Tente novamente.',
-          });
-        }
+    const ref = this.dialogService.open<boolean, DeleteRegistryDialogData>(
+      DeleteRegistryDialogComponent,
+      {
+        header: 'Deletar registro',
+        width: '22rem',
+        data: {
+          registryId: currentRegistry.id,
+          registryName,
+        },
       },
+    );
+
+    ref.closed.subscribe((success) => {
+      if (success === false) {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro ao deletar registro',
+          detail: 'Não foi possível remover o registro. Tente novamente.',
+        });
+      }
     });
   }
 
