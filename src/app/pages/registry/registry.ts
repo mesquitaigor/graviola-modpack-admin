@@ -25,7 +25,6 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MessageService, type MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { AddItemDialogComponent } from './components/add-item-dialog/add-item-dialog';
-import type { ItemAddEvent } from './components/add-item-dialog/add-item-dialog';
 import { AddVersionDialogComponent } from './components/add-version-dialog/add-version-dialog';
 import type { AddVersionDialogData } from './components/add-version-dialog/add-version-dialog';
 import { SelectVersionDialogComponent } from './components/select-version-dialog/select-version-dialog';
@@ -141,15 +140,7 @@ export class Registry {
   public readonly items = computed(() => this.selectedVersion()?.items ?? []);
   public readonly itemLangs = computed(() => this.registry()?.langs ?? []);
   public readonly itemTags = computed(() => this.registry()?.itemTags ?? []);
-  public readonly itemIdSuggestions = computed(() => {
-    const ids = this.itemTags().flatMap((tag) => tag.values ?? []);
-    return [...new Set(ids)].sort();
-  });
   public readonly versionLangs = computed(() => this.selectedVersion()?.langs ?? []);
-  public readonly itemNameSuggestions = computed(() => {
-    const names = this.versionLangs().flatMap((lang) => Object.values(lang.values ?? {}));
-    return [...new Set(names)].sort();
-  });
   public readonly itemLangEntryCount = computed(() =>
     this.itemLangs().reduce((count, lang) => count + Object.keys(lang.values ?? {}).length, 0),
   );
@@ -318,27 +309,6 @@ export class Registry {
         });
       }
     });
-  }
-
-  public async addItem(event: ItemAddEvent): Promise<void> {
-    const currentRegistry = this.registry();
-    const version = this.selectedVersion();
-    if (!currentRegistry?.id || !version) return;
-
-    const index = this.selectedVersionIndex();
-    const newItem = new ItemModel();
-    newItem.id = event.id;
-    newItem.name = event.name;
-    newItem.iconDataUrl = event.iconDataUrl;
-    const updatedItems = [...(version.items ?? []), newItem];
-    const updatedVersions = this.versions().map((v, i) =>
-      i === index ? { ...v, items: updatedItems } : v,
-    );
-
-    await firstValueFrom(
-      this.registryService.update(currentRegistry.id, { versions: updatedVersions }),
-    );
-    this.dialogs.close('addItem');
   }
 
   public updateNamespace(namespace: string): void {

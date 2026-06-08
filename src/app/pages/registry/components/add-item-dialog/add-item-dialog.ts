@@ -1,14 +1,12 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AutoCompleteModule, type AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-
-export interface ItemAddEvent {
-  id: string;
-  name?: string;
-  iconDataUrl?: string;
-}
+import { RegistryService } from '../../../../models/registry/registry.service';
+import ItemModel from '../../../../models/item/item.model';
 
 @Component({
   selector: 'app-add-item-dialog',
@@ -16,11 +14,20 @@ export interface ItemAddEvent {
   imports: [DialogModule, ButtonModule, AutoCompleteModule, FormsModule],
 })
 export class AddItemDialogComponent {
+  private readonly registryService = inject(RegistryService);
+  private readonly registries = toSignal(this.registryService.registries$, { initialValue: [] });
+  private readonly registry = computed(() =>
+    this.registries().find((r) => r.id === this.registryId()),
+  );
+  private readonly versions = computed(() => this.registry()?.versions ?? []);
+  private readonly selectedVersion = computed(() => this.versions()[this.selectedVersionIndex()]);
+  private readonly itemTags = computed(() => this.registry()?.itemTags ?? []);
+  private readonly versionLangs = computed(() => this.selectedVersion()?.langs ?? []);
+
   public visible = input(false);
-  public idSuggestions = input<string[]>([]);
-  public nameSuggestions = input<string[]>([]);
+  public registryId = input<string>('');
+  public selectedVersionIndex = input<number>(0);
   public visibleChange = output<boolean>();
-  public itemAdd = output<ItemAddEvent>();
   public importTagsRequest = output<void>();
   public importLangRequest = output<void>();
 
@@ -31,12 +38,14 @@ export class AddItemDialogComponent {
   protected readonly nameSearchQuery = signal('');
   protected readonly filteredIdSuggestions = computed(() => {
     const query = this.idSearchQuery().trim().toLowerCase();
-    const source = this.idSuggestions();
+    const ids = this.itemTags().flatMap((tag) => tag.values ?? []);
+    const source = [...new Set(ids)].sort();
     return query ? source.filter((id) => id.toLowerCase().includes(query)) : source;
   });
   protected readonly filteredNameSuggestions = computed(() => {
     const query = this.nameSearchQuery().trim().toLowerCase();
-    const source = this.nameSuggestions();
+    const names = this.versionLangs().flatMap((lang) => Object.values(lang.values ?? {}));
+    const source = [...new Set(names)].sort();
     return query ? source.filter((name) => name.toLowerCase().includes(query)) : source;
   });
 
@@ -74,14 +83,30 @@ export class AddItemDialogComponent {
     this.iconDataUrl.set(undefined);
   }
 
-  protected submit(): void {
+  protected async submit(): Promise<void> {
     if (!this.id.trim()) return;
-    this.itemAdd.emit({
-      id: this.id.trim(),
-      name: this.name.trim() || undefined,
-      iconDataUrl: this.iconDataUrl(),
-    });
+
+    const currentRegistry = this.registry();
+    const version = this.selectedVersion();
+    if (!currentRegistry?.id || !version) return;
+
+    const index = this.selectedVersionIndex();
+    const newItem = new ItemModel();
+    newItem.id = this.id.trim();
+    newItem.name = this.name.trim() || undefined;
+    newItem.iconDataUrl = this.iconDataUrl();
+
+    const updatedItems = [...(version.items ?? []), newItem];
+    const updatedVersions = this.versions().map((v, i) =>
+      i === index ? { ...v, items: updatedItems } : v,
+    );
+
+    await firstValueFrom(
+      this.registryService.update(currentRegistry.id, { versions: updatedVersions }),
+    );
+
     this.reset();
+    this.visibleChange.emit(false);
   }
 
   protected cancel(): void {

@@ -300,9 +300,8 @@
 <app-add-item-dialog
   [visible]="dialogs.isOpen('addItem')()"
   (visibleChange)="dialogs.setOpen('addItem', $event)"
-  [idSuggestions]="itemIdSuggestions()"
-  [nameSuggestions]="itemNameSuggestions()"
-  (itemAdd)="addItem($event)"
+  [registryId]="registry()?.id ?? ''"
+  [selectedVersionIndex]="selectedVersionIndex()"
   (importTagsRequest)="dialogs.open('uploadItemTags')"
   (importLangRequest)="openUploadVersionLangDialog()"
 ></app-add-item-dialog>
