@@ -13,9 +13,10 @@ export interface StoreSchema {
 @Injectable({ providedIn: 'root' })
 export class IndexedDbService {
   private readonly DB_NAME = 'graviola-modpack-admin';
-  private readonly DB_VERSION = 2;
+  private readonly DB_VERSION = 3;
 
   private dbPromise: Promise<IDBDatabase> | null = null;
+  private openPromise: Promise<IDBDatabase> | null = null;
   private pendingStores: StoreSchema[] = [];
   private reopenRequested = false;
   private currentVersion = this.DB_VERSION;
@@ -25,6 +26,13 @@ export class IndexedDbService {
    * Must be called in the constructor of domain services.
    */
   registerStore(schema: StoreSchema): void {
+    const alreadyRegistered = this.pendingStores.some(
+      (store) => store.name === schema.name,
+    );
+    if (alreadyRegistered) {
+      return;
+    }
+
     this.pendingStores.push(schema);
     if (this.dbPromise) {
       this.reopenRequested = true;
@@ -32,19 +40,35 @@ export class IndexedDbService {
   }
 
   async isStoreRegistered(storeName: string): Promise<boolean> {
+    if (this.pendingStores.some((store) => store.name === storeName)) {
+      return true;
+    }
+
     if (this.dbPromise) {
       const db = await this.dbPromise;
       return db.objectStoreNames.contains(storeName);
-    }
-
-    if (this.pendingStores.some((store) => store.name === storeName)) {
-      return true;
     }
 
     return false;
   }
 
   async getDb(): Promise<IDBDatabase> {
+    const db = await this.openIfNeeded();
+    if (!this.hasAllStores(db)) {
+      db.close();
+      this.dbPromise = null;
+      this.currentVersion = db.version;
+      this.reopenRequested = true;
+      return this.getDb();
+    }
+    return db;
+  }
+
+  private async openIfNeeded(): Promise<IDBDatabase> {
+    if (this.openPromise) {
+      return this.openPromise;
+    }
+
     if (this.dbPromise && !this.reopenRequested) {
       return this.dbPromise;
     }
@@ -53,14 +77,25 @@ export class IndexedDbService {
       const currentDb = await this.dbPromise;
       currentDb.close();
       this.dbPromise = null;
+      this.currentVersion = currentDb.version;
     }
 
-    const stores = [...this.pendingStores];
-    const openVersion = this.currentVersion;
-    this.reopenRequested = false;
-    this.currentVersion += 1;
+    this.openPromise = this.openDatabase();
+    try {
+      this.dbPromise = this.openPromise;
+      return await this.openPromise;
+    } finally {
+      this.openPromise = null;
+    }
+  }
 
-    this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
+  private openDatabase(): Promise<IDBDatabase> {
+    const stores = [...this.pendingStores];
+    const openVersion = Math.max(this.currentVersion, this.DB_VERSION) + 1;
+    this.reopenRequested = false;
+    this.currentVersion = openVersion;
+
+    return new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open(this.DB_NAME, openVersion);
 
       req.onupgradeneeded = ({ target }) => {
@@ -78,8 +113,12 @@ export class IndexedDbService {
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+  }
 
-    return this.dbPromise;
+  private hasAllStores(db: IDBDatabase): boolean {
+    return this.pendingStores.every((store) =>
+      db.objectStoreNames.contains(store.name),
+    );
   }
 
   private toPromise<T>(req: IDBRequest<T>): Promise<T> {
@@ -105,7 +144,6 @@ export class IndexedDbService {
 
   async add<T>(storeName: string, value: T): Promise<IDBValidKey> {
     const db = await this.getDb();
-    console.log(db);
     return this.toPromise(
       db.transaction(storeName, 'readwrite').objectStore(storeName).add(value),
     );

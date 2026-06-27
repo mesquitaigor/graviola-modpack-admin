@@ -3,5 +3,6 @@ export interface ModpackModel {
   name: string;
   version: string;
   icon: string;
-  directoryHandle: FileSystemDirectoryHandle;
+  directoryName?: string;
+  directoryHandle?: FileSystemDirectoryHandle;
 }

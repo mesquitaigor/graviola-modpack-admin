@@ -19,7 +19,7 @@ import {
   type TextureImportReviewItem,
   TexturesImportReviewDialogComponent,
 } from './components/textures-import-review-dialog/textures-import-review-dialog';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from 'primeng/button'; 
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ConfirmationService, MessageService, type MenuItem } from 'primeng/api';
@@ -100,7 +100,7 @@ export class Registry {
   });
 
   public readonly registry = computed(() =>
-    this.registries().find((registry) => registry.id === this.registryId()),
+    this.registries()?.find((registry) => registry.id === this.registryId()),
   );
   public readonly versions = computed(() => this.registry()?.versions ?? []);
   public readonly selectedVersionIndex = signal(0);
