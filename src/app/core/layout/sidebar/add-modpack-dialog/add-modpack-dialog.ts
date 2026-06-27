@@ -86,14 +86,19 @@ export class AddModpackDialogComponent {
     )
       return;
     this.saving.set(true);
-    await this.modpackService.add({
-      name: this.modpackForm.get('name')?.value?.trim() || '',
-      version: this.modpackForm.get('version')?.value?.trim() || '',
-      icon: this.modpackForm.get('name')?.value?.trim()[0]?.toUpperCase() || '',
-      directoryHandle: this.directoryHandle()!,
-    });
-    this.saving.set(false);
-    this.visible.set(false);
-    this.closed.emit();
+    try {
+      await this.modpackService.add({
+        name: this.modpackForm.get('name')?.value?.trim() || '',
+        version: this.modpackForm.get('version')?.value?.trim() || '',
+        icon: this.modpackForm.get('name')?.value?.trim()[0]?.toUpperCase() || '',
+        directoryHandle: this.directoryHandle()!,
+      });
+      this.visible.set(false);
+      this.closed.emit();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.saving.set(false);
+    }
   }
 }

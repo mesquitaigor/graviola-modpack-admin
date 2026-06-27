@@ -1,10 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { FileSystemService } from '../../core/services/file-system.service';
 import type { ModpackModel } from './modpack.model';
 import { ModpackDbService } from './modpack-db.service';
 
 @Injectable({ providedIn: 'root' })
 export class ModpackService {
   private readonly modpackDb = inject(ModpackDbService);
+  private readonly fileSystem = inject(FileSystemService);
 
   private modpacks = signal<ModpackModel[]>([]);
   private loaded = signal(false);
@@ -17,8 +19,22 @@ export class ModpackService {
 
   private async loadAll(): Promise<void> {
     const modpacks = await this.modpackDb.getAll();
-    this.modpacks.set(modpacks);
+    const restored = await Promise.all(
+      modpacks.map(async (modpack) => this.restoreDirectoryAccess(modpack)),
+    );
+    this.modpacks.set(restored);
     this.loaded.set(true);
+  }
+
+  private async restoreDirectoryAccess(
+    modpack: ModpackModel,
+  ): Promise<ModpackModel> {
+    if (!modpack.directoryHandle) {
+      return modpack;
+    }
+
+    await this.fileSystem.verifyPermission(modpack.directoryHandle);
+    return modpack;
   }
 
   getById(id: number): ModpackModel | undefined {

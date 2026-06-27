@@ -1,0 +1,83 @@
+<p-dialog
+  header="Adicionar NPC"
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  [closable]="true"
+  (onShow)="loadSaves()"
+>
+  <div class="flex flex-col gap-3 py-2">
+    @switch (loadStatus()) {
+      @case ('loading') {
+        <p class="text-sm text-platinum-400">Carregando saves...</p>
+      }
+      @case ('missing-directory') {
+        <p class="text-sm text-platinum-400">
+          Pasta do modpack não configurada.
+        </p>
+      }
+      @case ('no-saves-folder') {
+        <p class="text-sm text-platinum-400">
+          Pasta saves/ não encontrada no modpack.
+        </p>
+      }
+      @case ('no-saves') {
+        <p class="text-sm text-platinum-400">
+          Nenhum save encontrado em saves/.
+        </p>
+      }
+      @case ('ready') {
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-platinum-700">Save</label>
+          <p-select
+            [ngModel]="selectedSave()"
+            [options]="saves()"
+            placeholder="Selecione um save"
+            appendTo="body"
+            class="w-full"
+            (ngModelChange)="onSaveChange($event)"
+          />
+          <small class="text-xs text-platinum-400">
+            NPCs em saves/{{ selectedSave() }}/easy_npc/npcs
+          </small>
+        </div>
+
+        @switch (filesStatus()) {
+          @case ('loading') {
+            <p class="text-sm text-platinum-400">Carregando NPCs...</p>
+          }
+          @case ('no-folder') {
+            <p class="text-sm text-platinum-400">
+              Pasta easy_npc/npcs não encontrada neste save.
+            </p>
+          }
+          @case ('empty') {
+            <p class="text-sm text-platinum-400">
+              Nenhum arquivo de NPC encontrado neste save.
+            </p>
+          }
+          @case ('ready') {
+            <div class="flex flex-col gap-2 max-h-80 overflow-y-auto">
+              @for (file of npcFiles(); track file.name) {
+                <button
+                  type="button"
+                  class="cursor-pointer flex gap-2 items-center p-2 rounded hover:bg-platinum-50 text-left w-full"
+                  (click)="selectNpc(file)"
+                >
+                  <div
+                    class="w-8 h-8 flex items-center justify-center rounded bg-seagrass-400 shrink-0"
+                  >
+                    <i class="pi pi-user text-white text-sm"></i>
+                  </div>
+                  <span class="text-sm font-semibold text-platinum-700 truncate">{{
+                    file.name
+                  }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+</p-dialog>

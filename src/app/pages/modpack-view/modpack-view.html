@@ -21,6 +21,7 @@
           <p-tab value="general">Geral</p-tab>
           <p-tab value="datapacks">Datapacks</p-tab>
           <p-tab value="recipes">Recipes</p-tab>
+          <p-tab value="npcs">NPCs</p-tab>
         </p-tablist>
 
         <p-tabpanels>
@@ -39,6 +40,9 @@
           </p-tabpanel>
           <p-tabpanel value="recipes">
             <app-recipes-tab />
+          </p-tabpanel>
+          <p-tabpanel value="npcs">
+            <app-npcs-tab [modpack]="pack" />
           </p-tabpanel>
         </p-tabpanels>
       </p-tabs>

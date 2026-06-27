@@ -11,7 +11,7 @@
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
       >
         <i class="pi pi-check-circle"></i>
-        {{ modpack().directoryHandle.name }}
+        {{ modpack().directoryHandle?.name ?? modpack().directoryName ?? 'Pasta' }}
       </span>
       <button
         (click)="changeFolder()"

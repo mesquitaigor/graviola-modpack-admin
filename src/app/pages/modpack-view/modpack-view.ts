@@ -15,6 +15,9 @@ import { ModpackLogsComponent } from './components/modpack-logs/modpack-logs';
 import { ModpackHeaderComponent } from './components/modpack-header/modpack-header';
 import { DatapacksList } from './components/datapacks-list/datapacks-list';
 import { RecipesTab } from './components/recipes-tab/recipes-tab';
+import { NpcsTab } from './components/npcs-tab/npcs-tab';
+
+type ModpackTab = 'general' | 'datapacks' | 'recipes' | 'npcs';
 
 @Component({
   selector: 'app-modpack-view',
@@ -30,6 +33,7 @@ import { RecipesTab } from './components/recipes-tab/recipes-tab';
     DatapacksList,
     ModpackHeaderComponent,
     RecipesTab,
+    NpcsTab,
   ],
   providers: [ConfirmationService],
 })
@@ -43,9 +47,7 @@ export class ModpackViewComponent implements OnInit {
   public readonly modpack = signal(
     this.modpackService.getById(this.modpackId()),
   );
-  public readonly activeTab = signal<'general' | 'datapacks' | 'recipes'>(
-    'recipes',
-  );
+  public readonly activeTab = signal<ModpackTab>('recipes');
   public readonly folderStatus = signal<FolderStatus>('checking');
 
   get idRouter() {
@@ -68,7 +70,7 @@ export class ModpackViewComponent implements OnInit {
     });
   }
 
-  async selectTab(tab: 'general' | 'datapacks'): Promise<void> {
+  async selectTab(tab: ModpackTab): Promise<void> {
     this.activeTab.set(tab);
     if (tab === 'datapacks') {
       queueMicrotask(() => {
@@ -78,7 +80,12 @@ export class ModpackViewComponent implements OnInit {
   }
 
   async onTabValueChange(tab: string | number | undefined): Promise<void> {
-    if (tab === 'general' || tab === 'datapacks') {
+    if (
+      tab === 'general' ||
+      tab === 'datapacks' ||
+      tab === 'recipes' ||
+      tab === 'npcs'
+    ) {
       await this.selectTab(tab);
     }
   }
